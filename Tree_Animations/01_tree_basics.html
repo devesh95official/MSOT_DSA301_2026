@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Tree Basics — Tree Visualizer</title>
+<style>
+/* =====================================================================
+   SHARED DESIGN SYSTEM
+   The same :root tokens and component classes are used in every file of
+   this collection, so a teacher can restyle one file and copy the block.
+   ===================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#ffffff;
+  --surface:#f8fafc;
+  --surface-2:#f1f5f9;
+  --line:#e2e8f0;
+  --line-strong:#cbd5e1;
+  --ink:#0f172a;
+  --ink-2:#475569;
+  --ink-3:#8b98a9;
+  --accent:#4338ca;          /* the single accent colour */
+  --accent-soft:#eef2ff;
+  --accent-line:#a5b4fc;
+  --done:#0f766e;            /* finished / visited */
+  --done-soft:#d7f5f0;
+  --warn:#a16207;            /* temporary structures, e.g. Morris threads */
+  --warn-soft:#fef6da;
+  --bad:#b42318;             /* imbalance / error */
+  --bad-soft:#fdeceb;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r:8px;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans)}
+
+/* ---- page chrome ---- */
+.top{border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:30}
+.top-in{max-width:1400px;margin:0 auto;padding:9px 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.crumb:hover{text-decoration:underline}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--ink-2)}
+.wrap{max-width:1400px;margin:0 auto;padding:16px 20px 64px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);gap:16px;align-items:start}
+@media (max-width:1020px){.grid{grid-template-columns:1fr}}
+.stack{display:grid;gap:16px;min-width:0}
+
+/* ---- cards ---- */
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.card>h2{margin:0;padding:10px 14px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);border-bottom:1px solid var(--line);font-weight:650;display:flex;
+  justify-content:space-between;align-items:center;gap:10px}
+.card>h2 .tag{text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink-3);font-size:11px}
+.card-body{padding:14px}
+.card-body.tight{padding:10px 14px}
+
+/* ---- controls ---- */
+button,.btn{font:inherit;font-size:13px;padding:6px 11px;border:1px solid var(--line-strong);
+  background:var(--bg);color:var(--ink);border-radius:6px;cursor:pointer}
+button:hover:not(:disabled){background:var(--surface-2)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.primary:hover:not(:disabled){background:#3730a3}
+button.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
+button.danger{color:var(--bad);border-color:#f0c6c2}
+button.danger:hover:not(:disabled){background:var(--bad-soft)}
+button.sm{padding:4px 8px;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.gap4{gap:4px}
+label.f{font-size:12px;color:var(--ink-2);font-weight:600}
+input[type=text],select{font:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line-strong);
+  border-radius:6px;background:var(--bg);color:var(--ink);min-width:0}
+input.mono{font-family:var(--mono)}
+.toolbar{padding:10px 14px;border-bottom:1px solid var(--line);display:grid;gap:8px;background:var(--surface)}
+
+/* ---- tree canvas ---- */
+.canvas{overflow-x:auto;overflow-y:hidden;padding:8px 0}
+svg.tree{display:block;margin:0 auto;max-width:100%;height:auto}
+.edge{stroke:var(--line-strong);stroke-width:2;fill:none;transition:stroke .18s,stroke-width .18s}
+.edge.hot{stroke:var(--accent);stroke-width:3.5}
+.edge.done{stroke:var(--done);stroke-width:3}
+.edge.dim{stroke:var(--line)}
+.edge.bad{stroke:var(--bad);stroke-width:3}
+.nd{cursor:pointer}
+.nd circle.body{fill:var(--bg);stroke:var(--line-strong);stroke-width:2;
+  transition:fill .18s,stroke .18s,stroke-width .18s}
+.nd text.v{font:650 14px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;
+  pointer-events:none;transition:fill .18s}
+.nd text.badge,.nd text.hd{font:600 10.5px var(--mono);fill:var(--ink-2);text-anchor:middle;pointer-events:none}
+.nd.cur circle.body{fill:var(--accent);stroke:var(--accent)}
+.nd.cur text.v{fill:#fff}
+.nd.act circle.body{fill:var(--accent-soft);stroke:var(--accent-line)}
+.nd.done circle.body{fill:var(--done-soft);stroke:var(--done)}
+.nd.done text.v{fill:#0b5049}
+.nd.warnst circle.body{fill:var(--warn-soft);stroke:var(--warn)}
+.nd.badst circle.body{fill:var(--bad-soft);stroke:var(--bad)}
+.nd.badst text.v{fill:#8f1d15}
+.nd.sel circle.body{stroke:var(--accent);stroke-width:3.5}
+.nd.dim{opacity:.32}
+.nd:hover circle.body{stroke:var(--accent)}
+.ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:0}
+.nd.cur .ring{opacity:.35}
+.slot{fill:var(--surface-2);stroke:var(--line-strong);stroke-width:1.5;stroke-dasharray:3 3}
+.slot-t{font:600 10px var(--mono);fill:var(--ink-3);text-anchor:middle;dominant-baseline:central}
+.lvlband{fill:var(--surface);}
+.lvltxt{font:600 10.5px var(--mono);fill:var(--ink-3)}
+
+/* ---- legend ---- */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);
+  padding:9px 14px;border-top:1px solid var(--line);background:var(--surface)}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:13px;height:13px;border-radius:50%;border:2px solid var(--line-strong);background:var(--bg);flex:none}
+.sw.cur{background:var(--accent);border-color:var(--accent)}
+.sw.act{background:var(--accent-soft);border-color:var(--accent-line)}
+.sw.done{background:var(--done-soft);border-color:var(--done)}
+.sw.badst{background:var(--bad-soft);border-color:var(--bad)}
+.sw.warnst{background:var(--warn-soft);border-color:var(--warn)}
+.sw.sq{border-radius:3px}
+
+/* ---- text bits ---- */
+.props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;font-size:13px;margin:0}
+.props dt{color:var(--ink-2)}
+.props dd{margin:0;font-family:var(--mono);word-break:break-word}
+.note{font-size:13px;color:var(--ink-2);background:var(--surface);border-left:3px solid var(--accent-line);
+  padding:9px 11px;border-radius:0 6px 6px 0}
+.note.warnbox{border-left-color:var(--warn);background:var(--warn-soft);color:#7a4a06}
+.note.badbox{border-left-color:var(--bad);background:var(--bad-soft);color:#8f1d15}
+.note code,.props code{font-family:var(--mono);font-size:12.5px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);font-weight:650}
+.mono{font-family:var(--mono)}
+.muted{color:var(--ink-3)}
+.why{font-size:14px}
+.why b{font-weight:650}
+h3.mini{font:650 12px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);margin:0 0 6px}
+.hint{font-size:12.5px;color:var(--ink-2)}
+.pill{display:inline-block;font:600 11px var(--mono);border:1px solid var(--line-strong);
+  border-radius:999px;padding:1px 8px;background:var(--surface);color:var(--ink-2)}
+.err{font-size:12.5px;color:var(--bad);min-height:1.2em}
+.err.ok{color:var(--done)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;font:650 13px var(--mono)}
+.chip{border:1px solid var(--line-strong);border-radius:5px;padding:3px 9px;background:var(--surface)}
+.chip.hot{background:var(--accent);border-color:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <a class="crumb" href="index.html">&larr; All visualizers</a>
+    <h1>1 &middot; Binary Tree Basics</h1>
+    <span class="sub">Build a tree, click any node, and read what the vocabulary actually refers to.</span>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="grid">
+
+  <!-- ============================ LEFT: THE TREE ======================= -->
+  <div class="stack">
+    <section class="card">
+      <h2>The tree <span class="tag" id="shapeTag"></span></h2>
+
+      <div class="toolbar">
+        <div class="row">
+          <label class="f">Presets</label>
+          <button data-preset="course" class="sm">Course tree</button>
+          <button data-preset="simple" class="sm">Simple</button>
+          <button data-preset="complete" class="sm">Complete&nbsp;(7)</button>
+          <button data-preset="irregular" class="sm">Irregular</button>
+          <button data-preset="skewR" class="sm">Right&nbsp;skewed</button>
+          <button data-preset="skewL" class="sm">Left&nbsp;skewed</button>
+          <button data-preset="bst" class="sm">BST</button>
+        </div>
+        <div class="row">
+          <label class="f">Generate</label>
+          <button id="genBalanced" class="sm">Balanced</button>
+          <button id="genUnbalanced" class="sm">Unbalanced</button>
+          <button id="genRandom" class="sm">Random</button>
+          <label class="f" for="genN">nodes</label>
+          <input type="text" id="genN" class="mono" value="9" size="3" style="width:52px" inputmode="numeric">
+          <span style="flex:1"></span>
+          <button id="btnClear" class="sm danger">Clear</button>
+        </div>
+        <div class="row">
+          <label class="f" for="txt">Level order</label>
+          <input type="text" id="txt" class="mono" value="1 2 3 4 5 # 6" style="flex:1;min-width:180px"
+                 aria-describedby="fmtHelp">
+          <button id="btnLoad" class="primary sm">Load</button>
+          <button id="btnCopy" class="sm">Copy</button>
+        </div>
+        <div class="row">
+          <label class="f">Show</label>
+          <button id="tgDepth" class="sm">Depth</button>
+          <button id="tgHeight" class="sm">Height</button>
+          <button id="tgHD" class="sm">Horizontal distance</button>
+          <button id="tgSides" class="sm">L / R labels</button>
+          <button id="tgNull" class="sm">Empty children</button>
+          <button id="tgLevels" class="sm">Level bands</button>
+        </div>
+        <div class="err" id="msg" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="canvas" id="canvas">
+        <svg class="tree" id="svg" role="img" aria-label="Binary tree diagram"></svg>
+      </div>
+
+      <div class="legend">
+        <span><i class="sw sel-sw" style="border-color:var(--accent);border-width:3px"></i> selected</span>
+        <span><i class="sw cur"></i> highlighted by the term you clicked</span>
+        <span><i class="sw done"></i> leaf</span>
+        <span><i class="sw sq slot" style="background:var(--surface-2);border-style:dashed"></i> empty child (NULL)</span>
+        <span class="muted">Click a node to select it. Tab + Enter also works.</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Vocabulary — click a term to see it on the tree</h2>
+      <div class="card-body">
+        <div class="row gap4" id="terms">
+          <button data-term="root" class="sm">Root</button>
+          <button data-term="leaves" class="sm">Leaves</button>
+          <button data-term="internal" class="sm">Internal nodes</button>
+          <button data-term="edges" class="sm">Edges</button>
+          <button data-term="left" class="sm">Left children</button>
+          <button data-term="right" class="sm">Right children</button>
+          <button data-term="parent" class="sm">Parent of selected</button>
+          <button data-term="children" class="sm">Children of selected</button>
+          <button data-term="sibling" class="sm">Sibling of selected</button>
+          <button data-term="ancestors" class="sm">Ancestors of selected</button>
+          <button data-term="descendants" class="sm">Subtree of selected</button>
+          <button data-term="level" class="sm">Same level as selected</button>
+          <button data-term="none" class="sm">Clear highlight</button>
+        </div>
+        <div class="note" id="termNote" style="margin-top:12px">
+          A <b>tree</b> is a set of nodes joined by edges with three rules: one node is the
+          <b>root</b>, every other node has exactly one <b>parent</b>, and there are no cycles.
+          A tree with N nodes always has exactly N&nbsp;&minus;&nbsp;1 edges.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================ RIGHT: PANELS ======================== -->
+  <div class="stack">
+
+    <section class="card">
+      <h2>Selected node <span class="tag" id="selTag">nothing selected</span></h2>
+      <div class="card-body">
+        <dl class="props" id="propList">
+          <dt>—</dt><dd>click a node in the diagram</dd>
+        </dl>
+      </div>
+      <div class="card-body tight" style="border-top:1px solid var(--line);background:var(--surface);border-radius:0 0 8px 8px">
+        <div class="row" style="margin-bottom:8px">
+          <label class="f" for="valIn">Value</label>
+          <input type="text" id="valIn" class="mono" style="width:76px" inputmode="numeric" disabled>
+          <button id="btnVal" class="sm" disabled>Set</button>
+        </div>
+        <div class="row" style="margin-bottom:8px">
+          <button id="btnAddL" class="sm" disabled>+ Left child</button>
+          <button id="btnAddR" class="sm" disabled>+ Right child</button>
+          <button id="btnMove" class="sm" disabled>Move subtree…</button>
+        </div>
+        <div class="row">
+          <button id="btnDelSub" class="sm danger" disabled>Delete subtree</button>
+          <button id="btnDelOne" class="sm danger" disabled>Delete node only</button>
+        </div>
+        <p class="hint" id="editHint" style="margin:8px 0 0">
+          Select a node to edit it. “Delete node only” works when the node has at most one child —
+          that child takes its place.
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Whole tree</h2>
+      <div class="card-body">
+        <dl class="props" id="statList"></dl>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Height and depth — the two conventions</h2>
+      <div class="card-body">
+        <table>
+          <tr><th>Measured</th><th>In edges</th><th>In nodes</th></tr>
+          <tr><td>Depth of selected</td><td class="mono" id="dEdge">—</td><td class="mono" id="dNode">—</td></tr>
+          <tr><td>Height of selected</td><td class="mono" id="hEdge">—</td><td class="mono" id="hNode">—</td></tr>
+          <tr><td>Height of tree</td><td class="mono" id="tEdge">—</td><td class="mono" id="tNode">—</td></tr>
+        </table>
+        <div class="note" style="margin-top:10px">
+          <b>Depth</b> is measured downwards from the root. <b>Height</b> is measured upwards from the
+          deepest leaf. LeetCode counts <b>nodes</b>, so an empty tree has height 0 and a single node has
+          height 1. Written notes usually count <b>edges</b>, where a single node has height 0.
+          Both are correct — say which one you mean.
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Input format</h2>
+      <div class="card-body" id="fmtHelp">
+        <p style="margin:0 0 8px;font-size:13px">
+          Values are read <b>level by level</b>, left to right. Use <code class="mono">#</code> for an
+          empty child. Every node listed consumes two slots — its left child, then its right child.
+        </p>
+        <table>
+          <tr><td class="mono">1 2 3</td><td>root 1, children 2 and 3</td></tr>
+          <tr><td class="mono">1 2 3 4 5 # 6</td><td>the course tree</td></tr>
+          <tr><td class="mono">1 # 2 # 3</td><td>right-skewed chain</td></tr>
+          <tr><td class="mono">5</td><td>a single node: it is the root <em>and</em> a leaf</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>The C++ node</h2>
+      <div class="card-body" style="padding:0">
+<pre class="code" style="margin:0;font:12.5px/1.7 var(--mono);background:var(--surface);padding:12px;border-radius:0 0 8px 8px;overflow-x:auto">struct TreeNode {
+    int val;
+    TreeNode *left;
+    TreeNode *right;
+    TreeNode(int x)
+      : val(x), left(NULL), right(NULL) {}
+};</pre>
+      </div>
+    </section>
+
+  </div>
+</div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   1. MODEL
+   ===================================================================== */
+let _uid = 0;
+class TreeNode {
+  constructor(val){ this.val = val; this.left = null; this.right = null; this.id = ++_uid; }
+}
+
+const NULL_TOKENS = new Set(["#","null","NULL","n","N","-","."]);
+
+/** Parse level-order text such as "1 2 3 4 5 # 6" into a tree. */
+function parseTree(text){
+  const toks = String(text).trim().split(/[\s,]+/).filter(t => t.length);
+  if (!toks.length) return { root:null, error:null };
+  if (NULL_TOKENS.has(toks[0])) return { root:null, error:"The first value is the root — it cannot be empty." };
+
+  const make = t => { const v = Number(t); return Number.isFinite(v) ? new TreeNode(v) : null; };
+  const root = make(toks[0]);
+  if (!root) return { root:null, error:`"${toks[0]}" is not a number.` };
+
+  const q = [root];
+  let i = 1;
+  while (q.length && i < toks.length){
+    const n = q.shift();
+    for (const side of ["left","right"]){
+      if (i >= toks.length) break;
+      const t = toks[i++];
+      if (NULL_TOKENS.has(t)) continue;
+      const c = make(t);
+      if (!c) return { root:null, error:`"${t}" is not a number. Use digits, or # for an empty child.` };
+      n[side] = c; q.push(c);
+    }
+  }
+  if (i < toks.length)
+    return { root, error:`Ignored ${toks.length - i} extra value(s) — there was no parent slot left for them.`, soft:true };
+  return { root, error:null };
+}
+
+/** Inverse of parseTree. */
+function serialize(root){
+  if (!root) return "";
+  const out = [String(root.val)], q = [root];
+  while (q.length){
+    const n = q.shift();
+    for (const side of ["left","right"]){
+      const c = n[side];
+      if (c){ out.push(String(c.val)); q.push(c); } else out.push("#");
+    }
+  }
+  while (out.length && out[out.length-1] === "#") out.pop();
+  return out.join(" ");
+}
+
+/* --- small tree utilities, all O(N) --- */
+const walkPre = (n, fn) => { if (!n) return; fn(n); walkPre(n.left, fn); walkPre(n.right, fn); };
+const isLeaf  = n => !!n && !n.left && !n.right;
+const countNodes = n => n ? 1 + countNodes(n.left) + countNodes(n.right) : 0;
+const countLeaves = n => !n ? 0 : (isLeaf(n) ? 1 : countLeaves(n.left) + countLeaves(n.right));
+const sumNodes = n => n ? n.val + sumNodes(n.left) + sumNodes(n.right) : 0;
+const heightNodes = n => n ? 1 + Math.max(heightNodes(n.left), heightNodes(n.right)) : 0;
+const minDepthNodes = n => {
+  if (!n) return 0;
+  if (!n.left) return 1 + minDepthNodes(n.right);
+  if (!n.right) return 1 + minDepthNodes(n.left);
+  return 1 + Math.min(minDepthNodes(n.left), minDepthNodes(n.right));
+};
+function isBalanced(n){
+  const chk = x => {
+    if (!x) return 0;
+    const L = chk(x.left); if (L === -1) return -1;
+    const R = chk(x.right); if (R === -1) return -1;
+    if (Math.abs(L - R) > 1) return -1;
+    return 1 + Math.max(L, R);
+  };
+  return chk(n) !== -1;
+}
+function isBST(root){
+  let ok = true, prev = null;
+  (function go(n){ if (!n || !ok) return; go(n.left);
+    if (prev !== null && n.val <= prev) ok = false; prev = n.val; go(n.right); })(root);
+  return ok;
+}
+function parentOf(root, node){
+  let p = null;
+  walkPre(root, n => { if (n.left === node || n.right === node) p = n; });
+  return p;
+}
+function pathToRoot(root, node){        // [root ... node]
+  const path = [];
+  (function go(n){
+    if (!n) return false;
+    path.push(n);
+    if (n === node) return true;
+    if (go(n.left) || go(n.right)) return true;
+    path.pop(); return false;
+  })(root);
+  return path;
+}
+
+/* =====================================================================
+   2. LAYOUT
+   x comes from the in-order position, which guarantees no two nodes
+   ever overlap; y comes from the depth. Deterministic and stable.
+   ===================================================================== */
+const LAY = { gapX:64, gapY:82, pad:36, r:20 };
+
+function layout(root, opt){
+  const g = Object.assign({}, LAY, opt || {});
+  const nodes = [], byId = new Map();
+  let slot = 0, maxD = 0;
+  (function walk(n, d, hd, parent, side){
+    if (!n) return;
+    walk(n.left, d+1, hd-1, n, "L");
+    const rec = { n, d, hd, parent, side, slot:slot++, x:0, y:0 };
+    nodes.push(rec); byId.set(n.id, rec);
+    maxD = Math.max(maxD, d);
+    walk(n.right, d+1, hd+1, n, "R");
+  })(root, 0, 0, null, null);
+
+  for (const r of nodes){ r.x = g.pad + r.slot * g.gapX; r.y = g.pad + r.d * g.gapY; }
+  const edges = [];
+  for (const r of nodes) if (r.parent) edges.push({ p: byId.get(r.parent.id), c: r, side: r.side });
+
+  return {
+    nodes, edges, byId, root, gap:g, depth:maxD,
+    w: Math.max(240, g.pad*2 + Math.max(0, slot-1) * g.gapX),
+    h: g.pad*2 + maxD * g.gapY
+  };
+}
+
+/* =====================================================================
+   3. RENDERER
+   The DOM is built once per tree change. Per-step updates only touch
+   class attributes and badge text, so nothing ever re-flows or jumps.
+   ===================================================================== */
+const SVGNS = "http://www.w3.org/2000/svg";
+const el = (name, attrs) => {
+  const e = document.createElementNS(SVGNS, name);
+  for (const k in (attrs||{})) e.setAttribute(k, attrs[k]);
+  return e;
+};
+
+class Renderer {
+  constructor(svg, opts){
+    this.svg = svg;
+    this.opts = Object.assign({ interactive:true, badgeGap:false }, opts || {});
+    this.onSelect = null;
+    this.map = new Map();     // node id -> {rec, g, body, val, badge, hd}
+    this.edgeMap = new Map(); // "pid>cid" -> line
+    this.L = null;
+  }
+
+  draw(root, view){
+    view = view || {};
+    this.view = view;
+    const svg = this.svg;
+    svg.textContent = "";
+    this.map.clear(); this.edgeMap.clear();
+
+    if (!root){
+      svg.setAttribute("viewBox", "0 0 320 120");
+      svg.setAttribute("width", 320); svg.setAttribute("height", 120);
+      const t = el("text", { x:160, y:64, "text-anchor":"middle", class:"slot-t" });
+      t.textContent = "empty tree  (root == NULL)";
+      svg.appendChild(t);
+      this.L = null;
+      return;
+    }
+
+    const extraTop = view.levels ? 0 : 0;
+    const L = this.L = layout(root, { gapY: view.badges ? 92 : LAY.gapY });
+    const padRight = view.hd ? 26 : 8;
+    const W = L.w + padRight, H = L.h + 24;
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.setAttribute("width", W); svg.setAttribute("height", H);
+    svg.style.minWidth = Math.min(W, 1600) + "px";
+
+    const defs = el("defs");
+    defs.innerHTML =
+      '<marker id="arrW" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">' +
+      '<path d="M0,0 L10,5 L0,10 z" fill="#a16207"/></marker>';
+    svg.appendChild(defs);
+
+    // level bands (optional)
+    this.gBand = el("g"); svg.appendChild(this.gBand);
+    if (view.levels){
+      for (let d = 0; d <= L.depth; d++){
+        if (d % 2) continue;
+        const y = L.gap.pad + d*L.gap.gapY;
+        this.gBand.appendChild(el("rect", { x:0, y:y-26, width:W, height:52, class:"lvlband" }));
+      }
+      for (let d = 0; d <= L.depth; d++){
+        const y = L.gap.pad + d*L.gap.gapY;
+        const t = el("text", { x:4, y:y-30, class:"lvltxt" });
+        t.textContent = "level " + d;
+        this.gBand.appendChild(t);
+      }
+    }
+
+    this.gEdge = el("g"); svg.appendChild(this.gEdge);
+    this.gThread = el("g"); svg.appendChild(this.gThread);
+    this.gSlot = el("g"); svg.appendChild(this.gSlot);
+    this.gNode = el("g"); svg.appendChild(this.gNode);
+
+    // edges
+    for (const e of L.edges){
+      const line = el("line", { x1:e.p.x, y1:e.p.y, x2:e.c.x, y2:e.c.y, class:"edge" });
+      this.gEdge.appendChild(line);
+      this.edgeMap.set(e.p.n.id + ">" + e.c.n.id, line);
+      if (view.sides){
+        const t = el("text", {
+          x: e.p.x + (e.c.x - e.p.x) * 0.42 + (e.side === "L" ? -9 : 9),
+          y: e.p.y + (e.c.y - e.p.y) * 0.42, class:"lvltxt", "text-anchor":"middle" });
+        t.textContent = e.side;
+        this.gEdge.appendChild(t);
+      }
+    }
+
+    // empty-child markers
+    if (view.nulls){
+      for (const r of L.nodes){
+        for (const side of ["left","right"]){
+          if (r.n[side]) continue;
+          const dx = (side === "left" ? -22 : 22), dy = 40;
+          const x = r.x + dx, y = r.y + dy;
+          this.gSlot.appendChild(el("line", { x1:r.x, y1:r.y, x2:x, y2:y, class:"edge dim" }));
+          this.gSlot.appendChild(el("rect", { x:x-14, y:y-9, width:28, height:18, rx:4, class:"slot" }));
+          const t = el("text", { x:x, y:y, class:"slot-t" });
+          t.textContent = "∅";
+          this.gSlot.appendChild(t);
+        }
+      }
+    }
+
+    // nodes
+    for (const r of L.nodes){
+      const g = el("g", { class:"nd", transform:`translate(${r.x},${r.y})`, "data-id":r.n.id });
+      if (this.opts.interactive){
+        g.setAttribute("tabindex","0");
+        g.setAttribute("role","button");
+        g.setAttribute("aria-label", `node ${r.n.val}`);
+      }
+      const ring = el("circle", { class:"ring", r: L.gap.r + 5 });
+      const body = el("circle", { class:"body", r: L.gap.r });
+      const val  = el("text", { class:"v" });
+      val.textContent = r.n.val;
+      g.append(ring, body, val);
+
+      const badge = el("text", { class:"badge", y: L.gap.r + 15 });
+      g.appendChild(badge);
+
+      if (view.hd){
+        const hd = el("text", { class:"hd", x: L.gap.r + 15, y: -L.gap.r - 3, "text-anchor":"start" });
+        hd.textContent = "hd " + (r.hd > 0 ? "+" + r.hd : r.hd);
+        g.appendChild(hd);
+      }
+
+      this.gNode.appendChild(g);
+      this.map.set(r.n.id, { rec:r, g, body, val, badge });
+
+      if (this.opts.interactive){
+        g.addEventListener("click", () => this.onSelect && this.onSelect(r.n));
+        g.addEventListener("keydown", ev => {
+          if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); this.onSelect && this.onSelect(r.n); }
+        });
+      }
+    }
+  }
+
+  /** Apply one visual state snapshot. Cheap: only attributes change. */
+  apply(st){
+    st = st || {};
+    const nodeCls = st.nodes || {}, badges = st.badges || {}, edgeCls = st.edges || {};
+    for (const [id, h] of this.map){
+      const extra = nodeCls[id] || "";
+      const want = "nd" + (extra ? " " + extra : "");
+      if (h.g.getAttribute("class") !== want) h.g.setAttribute("class", want);
+      const b = badges[id] == null ? "" : String(badges[id]);
+      if (h.badge.textContent !== b) h.badge.textContent = b;
+    }
+    for (const [key, line] of this.edgeMap){
+      const want = "edge" + (edgeCls[key] ? " " + edgeCls[key] : "");
+      if (line.getAttribute("class") !== want) line.setAttribute("class", want);
+    }
+    // Morris-style temporary threads (rebuilt: there are only ever a few)
+    if (this.gThread){
+      this.gThread.textContent = "";
+      for (const t of (st.threads || [])){
+        const a = this.map.get(t.from), b = this.map.get(t.to);
+        if (!a || !b) continue;
+        const p = this.curve(a.rec, b.rec);
+        this.gThread.appendChild(el("path", { d:p, class:"thread", "marker-end":"url(#arrW)" }));
+      }
+    }
+  }
+
+  curve(a, b){
+    const dx = b.rec ? 0 : 0;
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const bend = Math.max(40, Math.abs(b.x - a.x) * 0.35);
+    return `M ${a.x} ${a.y + 22} Q ${mx + bend} ${my} ${b.x} ${b.y + 22}`;
+  }
+}
+
+/* =====================================================================
+   4. PAGE STATE
+   ===================================================================== */
+const PRESETS = {
+  course:    "1 2 3 4 5 # 6",
+  simple:    "1 2 3",
+  complete:  "1 2 3 4 5 6 7",
+  irregular: "1 2 3 # 4 5 # 6 7 # # 8",
+  skewR:     "1 # 2 # 3 # 4",
+  skewL:     "1 2 # 3 # 4",
+  bst:       "8 3 10 1 6 # 14 # # 4 7 13"
+};
+
+const svg = document.getElementById("svg");
+const R = new Renderer(svg, { interactive:true });
+let root = null;
+let selected = null;
+let term = "none";
+let moveFrom = null;
+const view = { depth:false, height:false, hd:false, sides:false, nulls:false, levels:false, badges:false };
+
+R.onSelect = n => { selected = n; if (moveFrom) finishMove(n); else refresh(); };
+
+function setMsg(text, ok){
+  const m = document.getElementById("msg");
+  m.textContent = text || "";
+  m.className = "err" + (ok ? " ok" : "");
+}
+
+function load(text, quiet){
+  const res = parseTree(text);
+  if (res.error && !res.soft){ setMsg(res.error); return false; }
+  root = res.root;
+  selected = null; moveFrom = null; term = "none";
+  document.getElementById("txt").value = serialize(root);
+  setMsg(res.error || (quiet ? "" : "Loaded."), !res.error);
+  redraw();
+  return true;
+}
+
+function redraw(){
+  view.badges = view.depth || view.height;
+  R.draw(root, view);
+  refresh();
+}
+
+/* ---------- generators ---------- */
+function balancedFrom(n){
+  const vals = Array.from({ length:n }, (_, i) => i + 1);
+  const build = (lo, hi) => {
+    if (lo > hi) return null;
+    const mid = (lo + hi) >> 1;
+    const node = new TreeNode(vals[mid]);
+    node.left = build(lo, mid - 1);
+    node.right = build(mid + 1, hi);
+    return node;
+  };
+  return build(0, n - 1);
+}
+function unbalancedFrom(n){
+  // a long left spine with an occasional right child: height ~ n/2
+  let r = new TreeNode(1), cur = r, v = 2;
+  while (v <= n){
+    cur.left = new TreeNode(v++);
+    if (v <= n && v % 3 === 0) cur.right = new TreeNode(v++);
+    cur = cur.left;
+  }
+  return r;
+}
+function randomTree(n){
+  if (n <= 0) return null;
+  const r = new TreeNode(1 + Math.floor(Math.random()*9));
+  const open = [r];
+  for (let i = 1; i < n; i++){
+    const k = Math.floor(Math.random() * open.length);
+    const p = open[k];
+    const sides = (!p.left && !p.right) ? (Math.random() < .5 ? ["left","right"] : ["right","left"])
+                : (!p.left ? ["left"] : ["right"]);
+    const side = sides[0];
+    const c = new TreeNode(1 + Math.floor(Math.random()*98));
+    p[side] = c;
+    if (p.left && p.right) open.splice(k, 1);
+    open.push(c);
+  }
+  return r;
+}
+const genN = () => Math.max(1, Math.min(60, parseInt(document.getElementById("genN").value, 10) || 9));
+
+/* =====================================================================
+   5. HIGHLIGHTING FROM THE VOCABULARY BUTTONS
+   ===================================================================== */
+const TERM_TEXT = {
+  none: `A <b>tree</b> is a set of nodes joined by edges with three rules: one node is the
+         <b>root</b>, every other node has exactly one <b>parent</b>, and there are no cycles.
+         A tree with N nodes always has exactly N&nbsp;&minus;&nbsp;1 edges.`,
+  root: `The <b>root</b> is the one node with no parent. It is drawn at the top, and every
+         algorithm on this site starts from it. A tree has exactly one root.`,
+  leaves: `A <b>leaf</b> has <em>both</em> children empty. The usual bug is writing the test with
+           <code>||</code> instead of <code>&amp;&amp;</code>: <code>!n->left &amp;&amp; !n->right</code>.
+           A node with one child is <em>not</em> a leaf.`,
+  internal: `An <b>internal node</b> is any node that is not a leaf — it has at least one child.
+             Internal nodes are where recursion branches.`,
+  edges: `An <b>edge</b> is the parent-to-child link. N nodes give exactly N&nbsp;&minus;&nbsp;1 edges,
+          because every node except the root is the child end of exactly one edge.`,
+  left: `Every highlighted node is somebody's <b>left child</b>. In a binary tree left and right are
+         <em>different positions</em>, not just an ordering — swapping them gives a different tree.`,
+  right: `Every highlighted node is somebody's <b>right child</b>. <code>root->right</code> is a
+          pointer like any other; it is <code>NULL</code> when the slot is empty.`,
+  parent: `The <b>parent</b> is the node directly above. A C++ <code>TreeNode</code> normally stores no
+           parent pointer, which is why recursion passes information downwards through arguments and
+           upwards through return values.`,
+  children: `The <b>children</b> are the nodes directly below: at most two in a binary tree.
+             <code>root->left</code> and <code>root->right</code>.`,
+  sibling: `Two nodes are <b>siblings</b> when they share a parent. Siblings are never on each
+            other's path to the root, which is exactly why a path may need to <em>turn</em> at their
+            parent (see the diameter page).`,
+  ancestors: `The <b>ancestors</b> of a node are every node on the path up to the root. The
+              highlighted chain is what would be sitting on the call stack when recursion reaches the
+              selected node — which is why recursive space is O(H).`,
+  descendants: `A node plus all of its descendants is its <b>subtree</b>. This is the whole reason
+                recursion works on trees: a subtree is itself a perfectly good tree, so the same
+                function solves it.`,
+  level: `All highlighted nodes are on the same <b>level</b> (the root is level 0). Level-based
+          questions — right view, level sums, zigzag — are BFS questions, not DFS ones.`
+};
+
+function highlightSet(){
+  // returns {nodes:{id:cls}, edges:{key:cls}} for the current term
+  const nodes = {}, edges = {};
+  if (!root) return { nodes, edges };
+  const mark = (n, cls) => { if (n) nodes[n.id] = cls; };
+
+  // leaves are always tinted so their meaning is always visible
+  walkPre(root, n => { if (isLeaf(n)) nodes[n.id] = "done"; });
+
+  switch (term){
+    case "root": mark(root, "cur"); break;
+    case "leaves": walkPre(root, n => { if (isLeaf(n)) nodes[n.id] = "cur"; }); break;
+    case "internal": walkPre(root, n => { if (!isLeaf(n)) nodes[n.id] = "cur"; }); break;
+    case "edges":
+      for (const key of R.edgeMap.keys()) edges[key] = "hot";
+      break;
+    case "left": walkPre(root, n => { if (n.left) nodes[n.left.id] = "cur"; }); break;
+    case "right": walkPre(root, n => { if (n.right) nodes[n.right.id] = "cur"; }); break;
+    case "parent": if (selected) mark(parentOf(root, selected), "cur"); break;
+    case "children": if (selected){ mark(selected.left, "cur"); mark(selected.right, "cur"); } break;
+    case "sibling": if (selected){
+        const p = parentOf(root, selected);
+        if (p) mark(p.left === selected ? p.right : p.left, "cur");
+      } break;
+    case "ancestors": if (selected){
+        const path = pathToRoot(root, selected);
+        for (let i = 0; i < path.length - 1; i++){
+          nodes[path[i].id] = "cur";
+          edges[path[i].id + ">" + path[i+1].id] = "hot";
+        }
+      } break;
+    case "descendants": if (selected){
+        walkPre(selected, n => { nodes[n.id] = "cur"; });
+        walkPre(selected, n => {
+          if (n.left) edges[n.id + ">" + n.left.id] = "hot";
+          if (n.right) edges[n.id + ">" + n.right.id] = "hot";
+        });
+      } break;
+    case "level": if (selected){
+        const rec = R.L && R.L.byId.get(selected.id);
+        if (rec) for (const r of R.L.nodes) if (r.d === rec.d) nodes[r.n.id] = "cur";
+      } break;
+  }
+  if (selected && nodes[selected.id] !== "cur") nodes[selected.id] = (nodes[selected.id] || "") + " sel";
+  else if (selected) nodes[selected.id] = "cur sel";
+  return { nodes, edges };
+}
+
+/* =====================================================================
+   6. PANELS
+   ===================================================================== */
+function refresh(){
+  const hl = highlightSet();
+  const badges = {};
+  if (root && (view.depth || view.height)){
+    walkPre(root, n => {
+      const bits = [];
+      if (view.depth) bits.push("d" + (pathToRoot(root, n).length - 1));
+      if (view.height) bits.push("h" + (heightNodes(n) - 1));
+      badges[n.id] = bits.join(" ");
+    });
+  }
+  R.apply({ nodes: hl.nodes, edges: hl.edges, badges });
+  document.getElementById("termNote").innerHTML = TERM_TEXT[term] || TERM_TEXT.none;
+  for (const b of document.querySelectorAll("#terms button"))
+    b.classList.toggle("on", b.dataset.term === term && term !== "none");
+  paintProps();
+  paintStats();
+  paintButtons();
+}
+
+function paintProps(){
+  const box = document.getElementById("propList");
+  const tag = document.getElementById("selTag");
+  if (!selected){
+    tag.textContent = "nothing selected";
+    box.innerHTML = "<dt>—</dt><dd class='muted'>click a node in the diagram</dd>";
+    for (const id of ["dEdge","dNode","hEdge","hNode"]) document.getElementById(id).textContent = "—";
+    fillTreeHeightCells();
+    return;
+  }
+  const n = selected;
+  const p = parentOf(root, n);
+  const sib = p ? (p.left === n ? p.right : p.left) : null;
+  const path = pathToRoot(root, n);
+  const depth = path.length - 1;
+  const hN = heightNodes(n), hE = hN - 1;
+  const rec = R.L && R.L.byId.get(n.id);
+  const kind = n === root ? (isLeaf(n) ? "root and leaf" : "root") : (isLeaf(n) ? "leaf" : "internal node");
+
+  tag.textContent = "value " + n.val;
+  const rows = [
+    ["value", n.val],
+    ["kind", kind],
+    ["parent", p ? p.val : "— (this is the root)"],
+    ["left child", n.left ? n.left.val : "NULL"],
+    ["right child", n.right ? n.right.val : "NULL"],
+    ["sibling", sib ? sib.val : "— (none)"],
+    ["level", depth],
+    ["depth", depth + " edges  /  " + (depth+1) + " nodes"],
+    ["height", hE + " edges  /  " + hN + " nodes"],
+    ["path from root", path.map(x => x.val).join(" → ")],
+    ["subtree nodes", countNodes(n)],
+    ["subtree leaves", countLeaves(n)],
+    ["subtree sum", sumNodes(n)],
+    ["horizontal distance", rec ? (rec.hd > 0 ? "+" + rec.hd : rec.hd) : "—"]
+  ];
+  box.innerHTML = rows.map(([k, v]) =>
+    `<dt>${k}</dt><dd>${String(v)}</dd>`).join("");
+
+  document.getElementById("dEdge").textContent = depth;
+  document.getElementById("dNode").textContent = depth + 1;
+  document.getElementById("hEdge").textContent = hE;
+  document.getElementById("hNode").textContent = hN;
+  fillTreeHeightCells();
+
+  document.getElementById("valIn").value = n.val;
+}
+
+function fillTreeHeightCells(){
+  const hN = heightNodes(root);
+  document.getElementById("tEdge").textContent = root ? Math.max(0, hN - 1) : "—";
+  document.getElementById("tNode").textContent = root ? hN : 0;
+}
+
+function shapeName(){
+  if (!root) return "";
+  const n = countNodes(root), h = heightNodes(root);
+  const perfect = n === Math.pow(2, h) - 1;
+  const skewed = h === n && n > 1;
+  const bal = isBalanced(root);
+  const bits = [];
+  if (perfect) bits.push("perfect");
+  else if (bal) bits.push("balanced");
+  else bits.push("unbalanced");
+  if (skewed) bits.push("skewed");
+  if (isBST(root) && n > 1) bits.push("also a BST");
+  return bits.join(" · ");
+}
+
+function paintStats(){
+  const box = document.getElementById("statList");
+  document.getElementById("shapeTag").textContent = shapeName();
+  if (!root){ box.innerHTML = "<dt>nodes</dt><dd>0 — the tree is empty</dd>"; return; }
+  const n = countNodes(root), h = heightNodes(root);
+  const rows = [
+    ["nodes (N)", n],
+    ["edges", n - 1],
+    ["leaves", countLeaves(root)],
+    ["internal", n - countLeaves(root)],
+    ["height (H)", (h - 1) + " edges  /  " + h + " nodes"],
+    ["minimum depth", minDepthNodes(root) + " nodes"],
+    ["sum of values", sumNodes(root)],
+    ["height-balanced?", isBalanced(root) ? "yes — every node's subtrees differ by ≤ 1" : "no"],
+    ["inorder sorted?", isBST(root) ? "yes — this tree is a BST" : "no — not a BST"],
+    ["log₂N for comparison", Math.log2(n).toFixed(2)]
+  ];
+  box.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+}
+
+function paintButtons(){
+  const has = !!selected;
+  const p = has ? parentOf(root, selected) : null;
+  const kids = has ? (selected.left ? 1 : 0) + (selected.right ? 1 : 0) : 0;
+  document.getElementById("valIn").disabled = !has;
+  document.getElementById("btnVal").disabled = !has;
+  document.getElementById("btnAddL").disabled = !has || !!selected.left;
+  document.getElementById("btnAddR").disabled = !has || !!selected.right;
+  document.getElementById("btnDelSub").disabled = !has;
+  document.getElementById("btnDelOne").disabled = !has || kids > 1;
+  document.getElementById("btnMove").disabled = !has || !p;
+  const hint = document.getElementById("editHint");
+  if (moveFrom){
+    hint.innerHTML = `<b>Move mode:</b> node <b>${moveFrom.val}</b> is picked up. Now click the node that
+      should become its new parent. Press Escape to cancel.`;
+  } else if (!has){
+    hint.textContent = "Select a node to edit it. “Delete node only” works when the node has at most one child — that child takes its place.";
+  } else if (kids > 1){
+    hint.textContent = "This node has two children, so it cannot simply be removed — deleting it would orphan a subtree. Use “Delete subtree”, or delete the children first.";
+  } else {
+    hint.textContent = "Edits update every panel immediately. The level-order box above always shows the current tree.";
+  }
+}
+
+/* =====================================================================
+   7. EDITING
+   ===================================================================== */
+function nextValue(){
+  let mx = 0;
+  walkPre(root, n => { mx = Math.max(mx, n.val); });
+  return mx + 1;
+}
+function commit(msg){
+  document.getElementById("txt").value = serialize(root);
+  setMsg(msg || "", true);
+  redraw();
+}
+function startMove(){
+  moveFrom = selected;
+  setMsg("Move mode: click the node that should become the new parent of " + moveFrom.val + ".");
+  paintButtons();
+}
+function finishMove(target){
+  const src = moveFrom;
+  moveFrom = null;
+  if (!src || !target){ paintButtons(); return; }
+  // A node cannot be moved into its own subtree — that would make a cycle.
+  let inside = false;
+  walkPre(src, n => { if (n === target) inside = true; });
+  if (inside){ selected = src; setMsg("Cannot move " + src.val + " under " + target.val +
+      ": that node is inside " + src.val + "'s own subtree, which would create a cycle."); redraw(); return; }
+  if (target.left && target.right){ selected = src;
+    setMsg("Node " + target.val + " already has two children. A binary tree allows no more."); redraw(); return; }
+  const p = parentOf(root, src);
+  if (p){ if (p.left === src) p.left = null; else p.right = null; }
+  const side = !target.left ? "left" : "right";
+  target[side] = src;
+  selected = src;
+  commit("Moved subtree " + src.val + " to be the " + side + " child of " + target.val + ".");
+}
+
+/* =====================================================================
+   8. WIRING
+   ===================================================================== */
+for (const b of document.querySelectorAll("[data-preset]"))
+  b.addEventListener("click", () => load(PRESETS[b.dataset.preset]));
+
+document.getElementById("btnLoad").addEventListener("click", () =>
+  load(document.getElementById("txt").value));
+document.getElementById("txt").addEventListener("keydown", e => {
+  if (e.key === "Enter") load(document.getElementById("txt").value);
+});
+document.getElementById("btnCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(serialize(root)); setMsg("Copied to clipboard.", true); }
+  catch { setMsg("Copy blocked by the browser — select the text manually."); }
+});
+document.getElementById("btnClear").addEventListener("click", () => { root = null; selected = null; commit("Tree cleared."); });
+document.getElementById("genBalanced").addEventListener("click", () => { root = balancedFrom(genN()); selected = null; commit("Generated a balanced tree."); });
+document.getElementById("genUnbalanced").addEventListener("click", () => { root = unbalancedFrom(genN()); selected = null; commit("Generated an unbalanced tree."); });
+document.getElementById("genRandom").addEventListener("click", () => { root = randomTree(genN()); selected = null; commit("Generated a random tree."); });
+
+const toggles = { tgDepth:"depth", tgHeight:"height", tgHD:"hd", tgSides:"sides", tgNull:"nulls", tgLevels:"levels" };
+for (const id in toggles){
+  const btn = document.getElementById(id);
+  btn.addEventListener("click", () => {
+    view[toggles[id]] = !view[toggles[id]];
+    btn.classList.toggle("on", view[toggles[id]]);
+    btn.setAttribute("aria-pressed", String(view[toggles[id]]));
+    redraw();
+  });
+  btn.setAttribute("aria-pressed","false");
+}
+
+for (const b of document.querySelectorAll("#terms button"))
+  b.addEventListener("click", () => { term = b.dataset.term; refresh(); });
+
+document.getElementById("btnVal").addEventListener("click", () => {
+  const v = Number(document.getElementById("valIn").value);
+  if (!Number.isFinite(v)){ setMsg("Enter a number."); return; }
+  selected.val = v; commit("Value changed to " + v + ".");
+});
+document.getElementById("valIn").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("btnVal").click();
+});
+document.getElementById("btnAddL").addEventListener("click", () => {
+  selected.left = new TreeNode(nextValue()); commit("Added a left child. It is a leaf, so its own children are NULL.");
+});
+document.getElementById("btnAddR").addEventListener("click", () => {
+  selected.right = new TreeNode(nextValue()); commit("Added a right child.");
+});
+document.getElementById("btnDelSub").addEventListener("click", () => {
+  const p = parentOf(root, selected);
+  const gone = countNodes(selected);
+  if (!p){ root = null; selected = null; commit("Deleted the root — the whole tree is gone."); return; }
+  if (p.left === selected) p.left = null; else p.right = null;
+  selected = p;
+  commit("Deleted that subtree: " + gone + " node(s) removed. Its parent's pointer is now NULL.");
+});
+document.getElementById("btnDelOne").addEventListener("click", () => {
+  const child = selected.left || selected.right || null;
+  const p = parentOf(root, selected);
+  if (!p){ root = child; }
+  else if (p.left === selected) p.left = child; else p.right = child;
+  const msg = child ? "Removed the node; its only child moved up into the empty slot."
+                    : "Removed a leaf. Its parent's pointer is now NULL.";
+  selected = child || p;
+  commit(msg);
+});
+document.getElementById("btnMove").addEventListener("click", startMove);
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && moveFrom){ moveFrom = null; setMsg("Move cancelled."); paintButtons(); }
+});
+
+load(PRESETS.course, true);
+setMsg("This is the tree used throughout the course notes: preorder 1 2 4 5 3 6, inorder 4 2 5 1 3 6.", true);
+</script>
+</body>
+</html>

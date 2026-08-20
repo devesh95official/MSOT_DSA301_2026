@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Trees — Interactive Visualizers</title>
+<style>
+/* =====================================================================
+   SHARED DESIGN SYSTEM  (identical in every file of this collection)
+   ===================================================================== */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#ffffff; --surface:#f8fafc; --surface-2:#f1f5f9;
+  --line:#e2e8f0; --line-strong:#cbd5e1;
+  --ink:#0f172a; --ink-2:#475569; --ink-3:#8b98a9;
+  --accent:#4338ca; --accent-soft:#eef2ff; --accent-line:#a5b4fc;
+  --done:#0f766e; --done-soft:#d7f5f0;
+  --warn:#a16207; --warn-soft:#fef6da;
+  --bad:#b42318;  --bad-soft:#fdeceb;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r:8px;
+}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans)}
+
+.top{border-bottom:1px solid var(--line);background:var(--bg);position:sticky;top:0;z-index:30}
+.top-in{max-width:1400px;margin:0 auto;padding:9px 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.crumb:hover{text-decoration:underline}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--ink-2)}
+.wrap{max-width:1400px;margin:0 auto;padding:16px 20px 64px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);gap:16px;align-items:start}
+@media (max-width:1020px){.grid{grid-template-columns:1fr}}
+.stack{display:grid;gap:16px;min-width:0}
+
+.card{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.card>h2{margin:0;padding:10px 14px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-2);border-bottom:1px solid var(--line);font-weight:650;display:flex;
+  justify-content:space-between;align-items:center;gap:10px}
+.card>h2 .tag{text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink-3);font-size:11px;text-align:right}
+.card-body{padding:14px}
+.card-body.tight{padding:10px 14px}
+.card-body.flush{padding:0}
+
+button,.btn{font:inherit;font-size:13px;padding:6px 11px;border:1px solid var(--line-strong);
+  background:var(--bg);color:var(--ink);border-radius:6px;cursor:pointer}
+button:hover:not(:disabled){background:var(--surface-2)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.primary:hover:not(:disabled){background:#3730a3}
+button.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent);font-weight:600}
+button.danger{color:var(--bad);border-color:#f0c6c2}
+button.danger:hover:not(:disabled){background:var(--bad-soft)}
+button.sm{padding:4px 8px;font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.gap4{gap:4px}
+label.f{font-size:12px;color:var(--ink-2);font-weight:600}
+input[type=text],select{font:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line-strong);
+  border-radius:6px;background:var(--bg);color:var(--ink);min-width:0}
+input.mono{font-family:var(--mono)}
+.toolbar{padding:10px 14px;border-bottom:1px solid var(--line);display:grid;gap:8px;background:var(--surface)}
+
+/* ---- tree canvas ---- */
+.canvas{overflow-x:auto;overflow-y:hidden;padding:8px 0}
+svg.tree{display:block;margin:0 auto;max-width:100%;height:auto}
+.edge{stroke:var(--line-strong);stroke-width:2;fill:none;transition:stroke .18s,stroke-width .18s}
+.edge.hot{stroke:var(--accent);stroke-width:3.5}
+.edge.done{stroke:var(--done);stroke-width:3}
+.edge.dim{stroke:var(--line)}
+.edge.bad{stroke:var(--bad);stroke-width:3}
+.edge.path{stroke:var(--done);stroke-width:4.5}
+.nd circle.body{fill:var(--bg);stroke:var(--line-strong);stroke-width:2;
+  transition:fill .18s,stroke .18s,stroke-width .18s}
+.nd text.v{font:650 14px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;
+  pointer-events:none;transition:fill .18s}
+.nd text.badge,.nd text.hd{font:600 10.5px var(--mono);fill:var(--ink-2);text-anchor:middle;pointer-events:none}
+.nd text.badge.big{font-size:11.5px;fill:var(--accent)}
+.nd.cur circle.body{fill:var(--accent);stroke:var(--accent)}
+.nd.cur text.v{fill:#fff}
+.nd.act circle.body{fill:var(--accent-soft);stroke:var(--accent-line)}
+.nd.done circle.body{fill:var(--done-soft);stroke:var(--done)}
+.nd.done text.v{fill:#0b5049}
+.nd.warnst circle.body{fill:var(--warn-soft);stroke:var(--warn)}
+.nd.badst circle.body{fill:var(--bad-soft);stroke:var(--bad)}
+.nd.badst text.v{fill:#8f1d15}
+.nd.sel circle.body{stroke:var(--accent);stroke-width:3.5}
+.nd.pick circle.body{stroke:var(--done);stroke-width:4}
+.nd.dim{opacity:.3}
+.ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:0;transition:opacity .18s}
+.nd.cur .ring{opacity:.35}
+.slot{fill:var(--surface-2);stroke:var(--line-strong);stroke-width:1.5;stroke-dasharray:3 3}
+.slot-t{font:600 10px var(--mono);fill:var(--ink-3);text-anchor:middle;dominant-baseline:central}
+.lvlband{fill:var(--surface)}
+.lvltxt{font:600 10.5px var(--mono);fill:var(--ink-3)}
+.thread{stroke:var(--warn);stroke-width:2.2;stroke-dasharray:6 4;fill:none}
+.nullpin{fill:var(--surface-2);stroke:var(--line-strong);stroke-dasharray:3 3}
+
+/* ---- legend ---- */
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);
+  padding:9px 14px;border-top:1px solid var(--line);background:var(--surface)}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:13px;height:13px;border-radius:50%;border:2px solid var(--line-strong);background:var(--bg);flex:none}
+.sw.cur{background:var(--accent);border-color:var(--accent)}
+.sw.act{background:var(--accent-soft);border-color:var(--accent-line)}
+.sw.done{background:var(--done-soft);border-color:var(--done)}
+.sw.badst{background:var(--bad-soft);border-color:var(--bad)}
+.sw.warnst{background:var(--warn-soft);border-color:var(--warn)}
+.sw.dash{border-radius:3px;background:var(--surface-2);border-style:dashed}
+.sw.ln{height:0;border:0;border-top:3px solid var(--warn);border-radius:0;width:16px;
+  border-top-style:dashed}
+
+/* ---- control bar ---- */
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;
+  border-top:1px solid var(--line);background:var(--surface)}
+.controls .spacer{flex:1}
+input[type=range]{width:118px;accent-color:var(--accent)}
+kbd{font:11px var(--mono);border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;
+  padding:1px 4px;background:var(--bg);color:var(--ink-2)}
+
+/* ---- step / explanation ---- */
+.step-no{font:650 12px var(--mono);color:var(--ink-2)}
+.bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin:7px 0 11px}
+.bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .18s}
+.op{font:650 13px var(--mono);color:var(--accent);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:6px;padding:7px 10px;display:block}
+.why{margin:11px 0 0;font-size:14px}
+.why b{font-weight:650}
+.why code,.note code,td code{font-family:var(--mono);font-size:12.5px}
+
+/* ---- code panel ---- */
+pre.code{margin:0;font:12.5px/1.75 var(--mono);overflow-x:auto;background:var(--surface);
+  padding:11px 0;border-radius:0 0 8px 8px}
+pre.code .ln{display:block;padding:0 13px;white-space:pre;border-left:3px solid transparent;
+  transition:background .15s}
+pre.code .ln.hl{background:var(--accent-soft);border-left-color:var(--accent)}
+pre.code .cm{color:#6b7a8d}
+pre.code .kw{color:#7c3aed}
+
+/* ---- stacks, queues, output ---- */
+.frames{display:flex;flex-direction:column;gap:4px;font:12.5px var(--mono)}
+.frames.up{flex-direction:column-reverse}
+.frame{border:1px solid var(--accent-line);background:var(--accent-soft);color:#3730a3;
+  border-radius:5px;padding:5px 9px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.frame.top{background:var(--accent);color:#fff;border-color:var(--accent)}
+.frame.ret{background:var(--done-soft);border-color:var(--done);color:#0b5049}
+.frame .fnote{font-size:11px;opacity:.85;white-space:nowrap}
+.empty{color:var(--ink-3);font:12.5px var(--mono)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;font:650 13px var(--mono)}
+.chip{border:1px solid var(--line-strong);border-radius:5px;padding:3px 9px;background:var(--surface)}
+.chip.hot{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.newv{background:var(--done-soft);border-color:var(--done);color:#0b5049}
+.chip.gone{opacity:.4;text-decoration:line-through}
+.qwrap{display:flex;align-items:center;gap:8px;font:650 13px var(--mono)}
+.qends{font:600 10.5px var(--mono);color:var(--ink-3);white-space:nowrap}
+.qbox{display:flex;gap:6px;flex-wrap:wrap;border:1px dashed var(--line-strong);border-radius:6px;
+  padding:6px;min-height:38px;flex:1;background:var(--surface)}
+
+/* ---- text bits ---- */
+.props{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 14px;font-size:13px;margin:0}
+.props dt{color:var(--ink-2)}
+.props dd{margin:0;font-family:var(--mono);word-break:break-word}
+.note{font-size:13px;color:var(--ink-2);background:var(--surface);border-left:3px solid var(--accent-line);
+  padding:9px 11px;border-radius:0 6px 6px 0}
+.note.warnbox{border-left-color:var(--warn);background:var(--warn-soft);color:#7a4a06}
+.note.badbox{border-left-color:var(--bad);background:var(--bad-soft);color:#8f1d15}
+.note.okbox{border-left-color:var(--done);background:var(--done-soft);color:#0b5049}
+.note+.note{margin-top:9px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);font-weight:650}
+.mono{font-family:var(--mono)}
+.muted{color:var(--ink-3)}
+h3.mini{font:650 12px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);margin:0 0 7px}
+.hint{font-size:12.5px;color:var(--ink-2)}
+.err{font-size:12.5px;color:var(--bad);min-height:1.2em}
+.err.ok{color:var(--done)}
+.seqrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;font-size:13px}
+.seqrow b{font-weight:650}
+
+.hero{border-bottom:1px solid var(--line);background:var(--surface)}
+.hero-in{max-width:1400px;margin:0 auto;padding:26px 20px 24px;display:grid;
+  grid-template-columns:minmax(0,1fr) auto;gap:26px;align-items:center}
+@media (max-width:860px){.hero-in{grid-template-columns:1fr}}
+.hero h1{font-size:26px;font-weight:650;letter-spacing:-.02em;margin:0 0 7px}
+.hero p{margin:0;font-size:14.5px;color:var(--ink-2);max-width:62ch}
+.hero .ref{font:12px/1.7 var(--mono);color:var(--ink-2);background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:12px 14px;white-space:pre}
+.hero .ref b{color:var(--ink)}
+h2.sect{font:650 12px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+  margin:30px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:baseline;gap:12px}
+h2.sect span{font:400 12px var(--sans);letter-spacing:0;text-transform:none;color:var(--ink-3)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px}
+a.tile{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:8px;
+  padding:13px 15px;background:var(--bg);transition:border-color .15s,box-shadow .15s,transform .15s}
+a.tile:hover{border-color:var(--accent-line);box-shadow:0 1px 3px rgba(15,23,42,.07)}
+a.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a.tile .n{font:650 11px var(--mono);color:var(--accent);letter-spacing:.04em}
+a.tile h3{margin:3px 0 5px;font-size:15px;font-weight:650;letter-spacing:-.01em}
+a.tile p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5}
+a.tile .tags{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap}
+a.tile .tg{font:600 10.5px var(--mono);border:1px solid var(--line);border-radius:999px;
+  padding:1px 7px;color:var(--ink-3);background:var(--surface)}
+.footgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:30px}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-in"><div><h1>Binary Trees &amp; Tree Algorithms</h1><p>Sixteen self-contained visualizers. Every one is a single HTML file — open it in any browser, no server and no internet needed. Each algorithm is a list of precomputed steps, so you can step forwards <i>and backwards</i> through it, pause anywhere, and read a plain-English explanation of why that step happened, with the matching C++ line highlighted.</p><p style="margin-top:10px"><span class="pill">&larr; &rarr; step</span> <span class="pill">space play/pause</span> <span class="pill">R reset</span> <span class="pill">every page takes a custom tree</span></p></div><div class="ref"><b>The tree used throughout</b>
+
+        1
+       / \
+      2   3
+     / \    \
+    4   5    6
+
+preorder    : 1 2 4 5 3 6
+inorder     : 4 2 5 1 3 6
+postorder   : 4 5 2 6 3 1
+level order : 1 | 2 3 | 4 5 6
+height      : 3 nodes, 2 edges
+diameter    : 4 edges (4-2-1-3-6)
+top view    : 4 2 1 3 6
+bottom view : 4 2 5 3 6
+right view  : 1 3 6
+boundary    : 1 2 4 5 6 3
+
+level-order input:  <b>1 2 3 4 5 # 6</b></div></div></header>
+<div class="wrap">
+<h2 class="sect">FOUNDATION<span>start here — vocabulary and the mental model</span></h2>
+<div class="cards">
+  <a class="tile" href="01_tree_basics.html"><div class="n">01</div><h3>Binary Tree Basics</h3><p>Build, edit and inspect a tree. Click any node to see its parent, children, sibling, depth, height and subtree; click a term to see what it points at.</p><div class="tags"><span class="tg">root / leaf</span><span class="tg">edges</span><span class="tg">editing</span><span class="tg">presets</span></div></a>
+  <a class="tile" href="15_recursion_playground.html"><div class="n">15</div><h3>Recursion Playground</h3><p>One recursion skeleton, six jobs. Watch a frame pause, see what travels down as arguments and what comes back up as return values.</p><div class="tags"><span class="tg">call stack</span><span class="tg">base case</span><span class="tg">combine</span></div></a>
+  <a class="tile" href="16_height_vs_depth.html"><div class="n">CONCEPT</div><h3>Height vs Depth</h3><p>The two measurements beginners swap. Click a node and compare its path up to the root with its path down to the deepest leaf.</p><div class="tags"><span class="tg">depth</span><span class="tg">height</span><span class="tg">conventions</span></div></a>
+  <a class="tile" href="17_balanced_vs_skewed.html"><div class="n">CONCEPT</div><h3>Balanced vs Skewed</h3><p>Two trees, same node count, walked side by side. Shows why cost follows height and not size — and where recursion actually breaks.</p><div class="tags"><span class="tg">O(log N)</span><span class="tg">O(N)</span><span class="tg">stack depth</span></div></a>
+</div>
+<h2 class="sect">DFS — RECURSIVE TRAVERSALS<span>the same walk, three moments of recording</span></h2>
+<div class="cards">
+  <a class="tile" href="02_recursive_preorder.html"><div class="n">02</div><h3>Preorder</h3><p>Root → Left → Right. Animated call stack, live output, and the base case on NULL made visible.</p><div class="tags"><span class="tg">first touch</span><span class="tg">call stack</span></div></a>
+  <a class="tile" href="03_recursive_inorder.html"><div class="n">03</div><h3>Inorder</h3><p>Left → Root → Right. Shows how long a node waits before it is recorded, and why a BST comes out sorted.</p><div class="tags"><span class="tg">second touch</span><span class="tg">BST</span></div></a>
+  <a class="tile" href="04_recursive_postorder.html"><div class="n">04</div><h3>Postorder</h3><p>Left → Right → Root. Nothing about a node is decided until both children report back — the shape of every bottom-up algorithm.</p><div class="tags"><span class="tg">last touch</span><span class="tg">bottom-up</span></div></a>
+  <a class="tile" href="05_dfs_comparison.html"><div class="n">05</div><h3>Compare All Three</h3><p>One tree, three answers side by side. The current node is marked in all three sequences at once.</p><div class="tags"><span class="tg">comparison</span><span class="tg">when to use which</span></div></a>
+</div>
+<h2 class="sect">ITERATIVE TRAVERSALS<span>replacing the call stack with one you can see</span></h2>
+<div class="cards">
+  <a class="tile" href="06_iterative_preorder.html"><div class="n">06</div><h3>Iterative Preorder</h3><p>Pop, process, push right, push left. Makes it obvious why the right child has to be pushed first.</p><div class="tags"><span class="tg">explicit stack</span><span class="tg">LIFO</span></div></a>
+  <a class="tile" href="07_iterative_inorder.html"><div class="n">07</div><h3>Iterative Inorder</h3><p>The pattern worth memorising: dive left, pop, visit, go right — with the stack and the pointer both on screen.</p><div class="tags"><span class="tg">cur pointer</span><span class="tg">two loops</span></div></a>
+  <a class="tile" href="08_iterative_postorder.html"><div class="n">08</div><h3>Iterative Postorder</h3><p>Two stacks, or one stack plus a lastVisited pointer. Switch between them and see why postorder is the awkward one.</p><div class="tags"><span class="tg">two stacks</span><span class="tg">lastVisited</span></div></a>
+</div>
+<h2 class="sect">BFS<span>a queue instead of a stack</span></h2>
+<div class="cards">
+  <a class="tile" href="09_level_order.html"><div class="n">09</div><h3>Level Order Traversal</h3><p>Queue animation with enqueue and dequeue, the size snapshot that creates level boundaries, and every level-based variation computed live.</p><div class="tags"><span class="tg">queue</span><span class="tg">size snapshot</span><span class="tg">views by level</span></div></a>
+</div>
+<h2 class="sect">TREE PROPERTIES<span>the bottom-up spine of the whole course</span></h2>
+<div class="cards">
+  <a class="tile" href="10_height.html"><div class="n">10</div><h3>Height / Maximum Depth</h3><p>1 + max(left, right), animated from the leaves upwards, in both the node and edge conventions.</p><div class="tags"><span class="tg">postorder</span><span class="tg">returns</span></div></a>
+  <a class="tile" href="11_diameter.html"><div class="n">11</div><h3>Diameter</h3><p>Record L + R, return 1 + max(L, R). The longest path is highlighted as it improves, with a live count of the work the brute force would have wasted.</p><div class="tags"><span class="tg">record vs return</span><span class="tg">O(N)</span></div></a>
+  <a class="tile" href="12_balanced_tree.html"><div class="n">12</div><h3>Balanced Binary Tree</h3><p>The sentinel −1 trick with early exits, next to the naive version and a counter showing the O(N²) blow-up.</p><div class="tags"><span class="tg">sentinel</span><span class="tg">O(N) vs O(N²)</span></div></a>
+</div>
+<h2 class="sect">TREE VIEWS<span>give every node a coordinate</span></h2>
+<div class="cards">
+  <a class="tile" href="14_tree_views.html"><div class="n">14</div><h3>Left, Right, Top, Bottom, Vertical, Boundary</h3><p>Horizontal distance shown on the tree, the map filling in column by column, and the three-part boundary walk animated phase by phase.</p><div class="tags"><span class="tg">hd</span><span class="tg">map<int,int></span><span class="tg">boundary</span></div></a>
+</div>
+<h2 class="sect">ADVANCED<span>for when O(H) space is not allowed</span></h2>
+<div class="cards">
+  <a class="tile" href="13_morris.html"><div class="n">13</div><h3>Morris Traversal</h3><p>Inorder and preorder with no recursion and no stack. The temporary threads are drawn as dashed arrows, created and destroyed in front of you.</p><div class="tags"><span class="tg">O(1) space</span><span class="tg">threads</span><span class="tg">predecessor</span></div></a>
+</div>
+<div class="footgrid">
+<section class="card"><h2>Suggested teaching order</h2><div class="card-body"><table><tr><td class="mono">1</td><td>01 basics, then 15 recursion playground — vocabulary and the call stack before any algorithm</td></tr><tr><td class="mono">2</td><td>02, 03, 04, then 05 to compare — one class</td></tr><tr><td class="mono">3</td><td>09 level order, and the variations table at the bottom of it</td></tr><tr><td class="mono">4</td><td>06, 07, 08 — only after recursion is comfortable</td></tr><tr><td class="mono">5</td><td>10, then 11 and 12 together: this is the spine of the course</td></tr><tr><td class="mono">6</td><td>14 views, then 13 Morris if the group is strong</td></tr></table><div class="note" style="margin-top:10px">Pages 10 to 12 are the ones worth slowing down on. Ask the class for the brute force first, let them find the repeated work themselves, then show the rewrite — the counters on pages 11 and 12 exist for exactly that moment.</div></div></section>
+<section class="card"><h2>How to drive these in class</h2><div class="card-body"><table><tr><td><b>Step, do not play.</b></td><td>Autoplay is there for a second pass. The first time through, use <kbd>&rarr;</kbd> and ask the class to predict the next step before you press it.</td></tr><tr><td><b>Change the tree.</b></td><td>Type a level-order string into the box on any page — e.g. <code class="mono">1 2 3 # 4 5 # 6 7 # # 8</code>. Traversal answers memorised from a perfect tree fall apart on an irregular one, which is the point.</td></tr><tr><td><b>Use the skewed preset.</b></td><td>On every page. It is where the complexity discussion becomes concrete instead of theoretical.</td></tr><tr><td><b>Go backwards.</b></td><td><kbd>&larr;</kbd> re-runs a step in reverse, which is how you answer “wait, why did it do that?” without restarting.</td></tr></table></div></section>
+<section class="card"><h2>Complexity cheat sheet</h2><div class="card-body"><table><tr><th>Algorithm</th><th>Time</th><th>Space</th><th>Note</th></tr><tr><td>Recursive traversal</td><td class="mono">O(N)</td><td class="mono">O(H)</td><td>call stack</td></tr><tr><td>Iterative traversal</td><td class="mono">O(N)</td><td class="mono">O(H)</td><td>explicit stack</td></tr><tr><td>Iterative postorder, two stacks</td><td class="mono">O(N)</td><td class="mono">O(N)</td><td>holds every node</td></tr><tr><td>Morris traversal</td><td class="mono">O(N)</td><td class="mono">O(1)</td><td>modifies the tree temporarily</td></tr><tr><td>BFS level order</td><td class="mono">O(N)</td><td class="mono">O(W)</td><td>W = widest level, up to N/2</td></tr><tr><td>Height, count, sum</td><td class="mono">O(N)</td><td class="mono">O(H)</td><td>one pass</td></tr><tr><td>Diameter, naive</td><td class="mono">O(N²)</td><td class="mono">O(H)</td><td>height recomputed</td></tr><tr><td>Diameter, bottom-up</td><td class="mono">O(N)</td><td class="mono">O(H)</td><td>record vs return</td></tr><tr><td>Balanced, naive</td><td class="mono">O(N²)</td><td class="mono">O(H)</td><td></td></tr><tr><td>Balanced, sentinel</td><td class="mono">O(N)</td><td class="mono">O(H)</td><td>early exit</td></tr><tr><td>Views with a map</td><td class="mono">O(N log N)</td><td class="mono">O(N)</td><td>O(N) with a vector + offset</td></tr><tr><td>Boundary traversal</td><td class="mono">O(N)</td><td class="mono">O(H)</td><td>three walks</td></tr></table><div class="note" style="margin-top:10px"><b>H</b> is the height: about log&nbsp;N when the tree is balanced, N when it is skewed. <b>W</b> is the widest level. <b>N</b> is the number of nodes, and a tree with N nodes always has N&nbsp;&minus;&nbsp;1 edges.</div></div></section>
+<section class="card"><h2>Which approach should I think of first?</h2><div class="card-body"><table><tr><td>levels, rows, views by level, nearest</td><td>BFS with the size snapshot &rarr; page 09</td></tr><tr><td>top, bottom, vertical, column</td><td>BFS + horizontal distance + map &rarr; page 14</td></tr><tr><td>a path that may turn</td><td>bottom-up, record vs return &rarr; page 11</td></tr><tr><td>root to leaf, or context from above</td><td>preorder with an extra parameter &rarr; page 15</td></tr><tr><td>needs facts from both subtrees</td><td>postorder, combine(L, R, val) &rarr; pages 04, 10</td></tr><tr><td>sorted, k-th, validate, search</td><td>it is a BST — use inorder &rarr; page 03</td></tr><tr><td>“without recursion”</td><td>explicit stack &rarr; pages 06–08</td></tr><tr><td>“O(1) extra space” and inorder</td><td>Morris &rarr; page 13</td></tr></table><div class="note" style="margin-top:10px">Then, before writing any code: state in one sentence what your function returns for an arbitrary node, and decide what it returns for an empty tree.</div></div></section>
+</div>
+<p class="hint" style="margin:28px 0 0;text-align:center">Every file is standalone HTML, CSS and vanilla JavaScript — no build step, no dependencies. Edit any of them directly.</p>
+</div>
+</body>
+</html>
