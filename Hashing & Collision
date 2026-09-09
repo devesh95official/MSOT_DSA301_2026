@@ -1,0 +1,1235 @@
+============================================================
+              HASHING & HASH TABLES IN C++
+============================================================
+
+
+1. WHAT IS HASHING?
+------------------------------------------------------------
+
+Hashing is a technique used to store and find data quickly.
+
+The basic idea is:
+
+        KEY (number to store)
+         |
+         v
+   HASH FUNCTION (mod kardo size se)
+         |
+         v
+      INDEX (mil gyi index)
+         |
+         v
+   HASH TABLE (is index pe store karado number ko jo key tha)
+
+index      keys = {4, 6, 88, 22};
+0 : -
+1 : 6
+2 : 22
+3 : 88
+4 : 4
+
+
+
+
+
+
+
+
+Example:
+
+Suppose table size = 10
+
+hash(x) = x % 10
+
+10 % 10 = 0
+21 % 10 = 1
+32 % 10 = 2
+43 % 10 = 3
+
+So:
+
+10 -> index 0
+21 -> index 1
+32 -> index 2
+43 -> index 3
+
+
+Why hashing?
+
+Normal search in an array:
+
+    O(N)
+
+Hashing:
+
+    O(1) average
+
+
+This makes hashing very useful in general programming.
+
+
+
+2. SIMPLEST FORM OF HASHING
+------------------------------------------------------------
+
+Suppose numbers are between 0 and 100.
+
+We can use:
+
+    int freq[101] = {};
+
+Example:
+
+    int a[] = {2, 4, 2, 7, 4, 2};
+
+    int freq[101] = {};
+
+    for (int x : a) {
+        freq[x]++; //
+    }
+
+
+Now:
+
+    freq[2] = 3
+    freq[4] = 2
+    freq[7] = 1
+
+
+This is called frequency counting.
+
+
+Complete code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    int a[] = {2, 4, 2, 7, 4, 2};
+
+    int freq[101] = {};
+
+    for (int x : a) {
+        freq[x]++;
+    }
+
+    for (int i = 0; i <= 100; i++) {
+        if (freq[i] > 0) {
+            cout << i << " -> " << freq[i] << '\n';
+        }
+    }
+
+    return 0;
+}
+
+
+
+3. PROBLEM WITH FREQUENCY ARRAY
+------------------------------------------------------------
+
+What if the values are very large?
+
+Example:
+
+    1000000000
+    500000000
+    999999999
+
+We cannot practically create:
+
+    int freq[1000000001];
+
+This is where hash tables are useful.
+
+
+
+4. HASH TABLE
+------------------------------------------------------------
+
+A hash table stores data using a hash function.
+
+Conceptually:
+
+    KEY
+     |
+     v
+    HASH
+     |
+     v
+   BUCKET
+     |
+     v
+   VALUE
+
+
+Example:
+
+    key = 27
+    table size = 10
+
+    27 % 10 = 7
+
+So 27 goes into bucket 7.
+
+
+keys    numbers = {1005, 2, 99, 87, 69, 1, 20, 89, 67};
+
+0 -> 20
+1 -> 1
+2 -> 2
+3
+4
+5 -> 1005
+6
+7 -> 87 -> 67
+8
+9 -> 99 -> 69 -> 89 // collision
+// hash table
+
+
+
+
+5. COLLISION
+------------------------------------------------------------
+
+A collision happens when different keys produce the same index.
+
+Example:
+
+    12 % 10 = 2
+    22 % 10 = 2
+    32 % 10 = 2
+
+All three values want index 2.
+
+This is called a collision.
+
+
+
+6. COLLISION HANDLING
+------------------------------------------------------------
+
+Two common techniques are:
+
+    1. Chaining
+    2. Open Addressing
+
+
+For beginners, understand chaining first.
+
+
+Example:
+
+    index 2 -> 12 -> 22 -> 32
+
+
+A simple representation:
+
+    vector<vector<int>> table(10);
+
+
+Example code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    int SIZE = 10;
+
+    vector<vector<int>> table(SIZE);
+
+    int x = 27;
+
+    int index = x % SIZE;
+
+    table[index].push_back(x);
+
+    return 0;
+}
+
+
+
+7. C++ STL HASH TABLES
+------------------------------------------------------------
+
+C++ already provides hash table data structures.
+
+The two most important ones are:
+
+    unordered_map
+    unordered_set
+
+
+
+8. UNORDERED_MAP
+------------------------------------------------------------
+
+unordered_map stores:
+
+    KEY -> VALUE
+
+Syntax:
+
+    unordered_map<key_type, value_type> mp;
+
+
+Example:
+
+    unordered_map<int, int> mp;
+
+
+Here:
+
+    key   = integer
+    value = integer
+
+
+Example:
+
+    mp[10] = 100;
+    mp[20] = 200;
+
+So:
+
+    10 -> 100
+    20 -> 200
+
+
+
+9. FREQUENCY USING UNORDERED_MAP
+------------------------------------------------------------
+
+This is one of the most important hashing patterns.
+
+Example:
+
+    10 20 10 30 20 10
+
+We want:
+
+    10 -> 3
+    20 -> 2
+    30 -> 1
+
+
+Code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<int> a = {10, 20, 10, 30, 20, 10};
+
+    unordered_map<int, int> freq;
+
+    for (int x : a) {
+        freq[x]++;
+    }
+
+    for (auto p : freq) {
+        cout << p.first << " -> " << p.second << '\n';
+    }
+
+    return 0;
+}
+
+
+IMPORTANT PATTERN:
+
+    unordered_map<int, int> freq;
+
+    for (int x : a) {
+        freq[x]++;
+    }
+
+
+Remember this pattern.
+
+
+
+10. UNORDERED_MAP OPERATIONS
+------------------------------------------------------------
+
+Create:
+
+    unordered_map<int, int> mp;
+
+
+Insert:
+
+    mp[10] = 100;
+
+
+Access:
+
+    cout << mp[10];
+
+
+Update:
+
+    mp[10]++;
+
+    mp[10] += 5;
+
+
+Delete:
+
+    mp.erase(10);
+
+
+Size:
+
+    cout << mp.size();
+
+
+Clear:
+
+    mp.clear();
+
+
+
+11. CHECK WHETHER A KEY EXISTS
+------------------------------------------------------------
+
+Method 1: find()
+
+    if (mp.find(x) != mp.end()) {
+        cout << "Found";
+    }
+
+
+If key exists:
+
+    mp.find(x) != mp.end()
+
+
+If key doesn't exist:
+
+    mp.find(x) == mp.end()
+
+
+
+12. COUNT()
+------------------------------------------------------------
+
+We can also use:
+
+    mp.count(x)
+
+
+For unordered_map:
+
+    0 -> key does not exist
+    1 -> key exists
+
+
+Example:
+
+    if (mp.count(20)) {
+        cout << "Exists";
+    }
+
+
+This is very useful in competitive programming.
+
+
+
+13. ITERATING OVER UNORDERED_MAP
+------------------------------------------------------------
+
+Example:
+
+    unordered_map<int, int> mp;
+
+    mp[10] = 2;
+    mp[20] = 5;
+    mp[30] = 1;
+
+    for (auto  p : mp) {
+        cout << p.first << " " << p.second << '\n';
+    }
+
+
+Here:
+
+    p.first  -> key
+    p.second -> value
+
+
+IMPORTANT:
+
+unordered_map does NOT maintain sorted order.
+
+
+
+14. UNORDERED_SET
+------------------------------------------------------------
+
+Sometimes we only care whether a value exists.
+
+We don't need a key-value pair.
+
+Use:
+
+    unordered_set
+
+
+Example:
+
+    unordered_set<int> st;
+
+
+Insert:
+
+    st.insert(10);
+    st.insert(20);
+    st.insert(30);
+
+
+Check:
+
+    if (st.count(20)) {
+        cout << "Exists";
+    }
+
+
+Delete:
+
+    st.erase(20);
+
+
+
+15. SET VS UNORDERED_SET
+------------------------------------------------------------
+
+set:
+
+    set<int> st;
+
+Properties:
+
+    - Sorted
+    - O(log N)
+
+
+unordered_set:
+
+    unordered_set<int> st;
+
+Properties:
+
+    - Not sorted
+    - O(1) average
+
+
+
+16. MAP VS UNORDERED_MAP
+------------------------------------------------------------
+
+map:
+
+    map<int, int> mp;
+
+Properties:
+
+    - Keys are sorted
+    - O(log N)
+
+
+unordered_map:
+
+    unordered_map<int, int> mp;
+
+Properties:
+
+    - Keys are not sorted
+    - O(1) average
+
+
+Remember:
+
+    map           -> sorted
+    unordered_map -> hashing
+    set           -> sorted unique values
+    unordered_set -> hash-based unique values
+
+
+
+17. WHEN TO USE UNORDERED_SET?
+------------------------------------------------------------
+
+Use unordered_set when you only need:
+
+    "Have I seen this value?"
+
+Examples:
+
+    - Check duplicates
+    - Check existence
+    - Find distinct elements
+    - Track visited values
+
+
+
+18. WHEN TO USE UNORDERED_MAP?
+------------------------------------------------------------
+
+Use unordered_map when you need:
+
+    - Frequency
+    - Position
+    - Mapping
+    - Previously seen information
+
+
+Common patterns:
+
+    Frequency:
+
+        unordered_map<int, int> freq;
+
+        freq[x]++;
+
+
+    Position:
+
+        unordered_map<int, int> pos;
+
+        pos[x] = i;
+
+
+
+19. EXAMPLE: CHECK DUPLICATES
+------------------------------------------------------------
+
+Problem:
+
+Given an array, check whether any value appears more than once.
+
+Example:
+
+    1 2 3 4 2
+
+Answer:
+
+    YES
+
+
+Solution:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<int> a = {1, 2, 3, 4, 2};
+
+    unordered_set<int> st;
+
+    for (int x : a) {
+
+        if (st.count(x)) {
+            cout << "YES\n";
+            return 0;
+        }
+
+        st.insert(x);
+    }
+
+    cout << "NO\n";
+
+    return 0;
+}
+
+
+Complexity:
+
+    Time  -> O(N * N) average -> jhut bol rha h
+    Space -> O(N)
+
+
+
+20. EXAMPLE: COUNT CHARACTERS
+------------------------------------------------------------
+
+Problem:
+
+Count frequency of every character in a string.
+
+Example:
+
+    banana
+
+Answer:
+
+    b -> 1
+    a -> 3
+    n -> 2
+
+
+Code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    string s = "banana";
+
+    unordered_map<char, int> freq;
+
+    for (char c : s) {
+        freq[c]++;
+    }
+
+    for (auto p : freq) {
+        cout << p.first << " -> " << p.second << '\n';
+    }
+
+    return 0;
+}
+
+
+
+21. HASHING WITH STRINGS
+------------------------------------------------------------
+
+unordered_map is not limited to integers.
+
+We can use:
+
+    unordered_map<string, int>
+
+
+Example:
+
+    unordered_map<string, int> mp;
+
+    mp["apple"] = 5;
+    mp["banana"] = 10;
+    mp["mango"] = 7;
+
+    cout << mp["banana"];
+
+
+Output:
+
+    10
+
+
+
+22. EXAMPLE: COUNT WORDS
+------------------------------------------------------------
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<string> words = {
+        "apple",
+        "banana",
+        "apple",
+        "mango",
+        "banana"
+    };
+
+    unordered_map<string, int> freq;
+
+    for (string word : words) {
+        freq[word]++;
+    }
+
+    for (auto p : freq) {
+        cout << p.first << " -> " << p.second << '\n';
+    }
+
+    return 0;
+}
+
+
+
+23. STORING POSITIONS
+------------------------------------------------------------
+
+Suppose:
+
+    a = {10, 20, 30, 40}
+
+
+We want:
+
+    10 -> 0
+    20 -> 1
+    30 -> 2
+    40 -> 3
+
+
+Code:
+
+    unordered_map<int, int> pos;
+
+    for (int i = 0; i < a.size(); i++) {
+        pos[a[i]] = i;
+    }
+
+
+Now:
+
+    pos[30]
+
+gives:
+
+    2
+
+
+
+24. IMPORTANT WARNING ABOUT mp[x]
+------------------------------------------------------------
+
+Be careful with:
+
+    mp[x]
+
+
+If x does not exist, using:
+
+    mp[x]
+
+can create a new key.
+
+For checking existence, prefer:
+
+    mp.find(x) != mp.end()
+
+or:
+
+    mp.count(x)
+
+
+Example:
+
+    if (mp.count(x)) {
+        cout << "Found";
+    }
+
+
+This is safer for existence checks.
+
+
+
+25. TWO SUM
+------------------------------------------------------------
+
+One of the most important applications of hashing.
+
+Problem:
+
+Given an array and target T, determine if two numbers have sum T.
+
+Example:
+
+    Array:
+    2 7 11 15
+
+    Target:
+    9
+
+
+We need:
+
+    2 + 7 = 9
+
+
+For every x, we need:
+
+    target - x
+
+
+Example:
+
+    x = 7
+
+    need = 9 - 7
+         = 2
+
+
+If 2 has already appeared, we found the answer.
+
+
+Code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<int> a = {2, 7, 11, 15};
+
+    int target = 9;
+
+    unordered_set<int> st;
+
+    for (int x : a) {
+
+        int need = target - x;
+
+        if (st.count(need)) {
+            cout << "YES\n";
+            return 0;
+        }
+
+        st.insert(x);
+    }
+
+    cout << "NO\n";
+
+    return 0;
+}
+
+
+Complexity:
+
+    Time  -> O(N * N) average -> very bad people
+    Space -> O(N)
+
+
+
+26. FIRST REPEATING ELEMENT
+------------------------------------------------------------
+
+Problem:
+
+    1 2 3 4 2 5
+
+First repeating element is:
+
+    2
+
+
+Code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<int> a = {1, 2, 3, 4, 2, 5};
+
+    unordered_set<int> st;
+
+    for (int x : a) {
+
+        if (st.count(x)) {
+            cout << x << '\n';
+            return 0;
+        }
+
+        st.insert(x);
+    }
+
+    cout << -1 << '\n';
+
+    return 0;
+}
+
+
+
+27. THE MAIN HASHING QUESTION
+------------------------------------------------------------
+
+Whenever you see a problem, ask:
+
+    "What information do I need to remember
+     about previous elements?"
+
+
+Usually it is one of these:
+
+    1. Have I seen this?
+    2. How many times have I seen this?
+    3. Where did I see this?
+
+
+Then choose:
+
+    Have I seen this?
+        -> unordered_set
+
+
+    How many times?
+        -> unordered_map
+
+
+    Where did I see this?
+        -> unordered_map
+
+
+
+28. IMPORTANT COMPLEXITIES
+------------------------------------------------------------
+
+// unordered_map:  // jhut ki dunia
+
+//     Insert   -> O(1) average
+//     Search   -> O(1) average
+//     Delete   -> O(1) average
+
+
+// unordered_set:
+
+//     Insert   -> O(1) average
+//     Search   -> O(1) average
+//     Delete   -> O(1) average
+
+
+Important:
+
+These are average-case complexities.
+
+Due to collisions, worst-case complexity can be O(N).
+
+
+
+29. HASHING VS NORMAL SEARCH
+------------------------------------------------------------
+
+Suppose:
+
+    a = {10, 20, 30, 40, 50}
+
+
+Using normal array search:
+
+    Search 40
+
+May require:
+
+    10
+    20
+    30
+    40
+
+Complexity:
+
+    O(N)
+
+
+Using hashing:
+
+    Search using hash table
+
+Average complexity:
+
+    O(1)
+
+
+
+30. COMMON HASHING PATTERNS
+------------------------------------------------------------
+
+PATTERN 1: FREQUENCY
+
+    unordered_map<int, int> freq;
+
+    for (int x : a) {
+        freq[x]++;
+    }
+
+
+PATTERN 2: EXISTENCE
+
+    unordered_set<int> st;
+
+    for (int x : a) {
+
+        if (st.count(x)) {
+            // already seen
+        }
+
+        st.insert(x);
+    }
+
+
+PATTERN 3: POSITION
+
+    unordered_map<int, int> pos;
+
+    for (int i = 0; i < a.size(); i++) {
+        pos[a[i]] = i;
+    }
+
+
+PATTERN 4: COMPLEMENT
+
+    int need = target - x;
+
+    if (st.count(need)) {
+        // found pair
+    }
+
+
+
+31. COMMON BEGINNER PROBLEMS
+------------------------------------------------------------
+
+LEVEL 1
+-------
+
+1. Count frequency of numbers
+2. Count frequency of characters
+3. Check whether an element exists
+4. Count distinct elements
+5. Check for duplicates
+
+
+LEVEL 2
+-------
+
+6. First repeating element
+7. First non-repeating element
+8. Two Sum
+9. Intersection of two arrays
+10. Check whether two arrays contain the same elements
+
+
+LEVEL 3
+-------
+
+11. Count pairs with a given sum
+12. Longest substring without repeating characters
+13. Longest subarray with sum K
+14. Count subarrays with sum K
+15. Group elements using frequency
+
+
+These problems teach the major hashing patterns.
+
+
+
+32. QUICK REVISION
+------------------------------------------------------------
+
+HASHING:
+
+    Key -> Hash Function -> Bucket
+
+
+COLLISION:
+
+    Different keys can produce the same bucket.
+
+
+unordered_set:
+
+    Use when you only care about existence.
+
+
+unordered_map:
+
+    Use when you need key -> value.
+
+
+Frequency:
+
+    unordered_map<int, int> freq;
+
+    freq[x]++;
+
+
+Existence:
+
+    unordered_set<int> st;
+
+    st.count(x);
+
+
+Position:
+
+    unordered_map<int, int> pos;
+
+    pos[x] = i;
+
+
+Average complexity:
+
+    Insert -> O(1)
+    Search -> O(1)
+    Delete  -> O(1)
+
+
+
+33. GOLDEN RULE
+------------------------------------------------------------
+
+Need to know:
+
+    "Does this exist?"
+        -> unordered_set
+
+
+    "How many times?"
+        -> unordered_map
+
+
+    "Where was it?"
+        -> unordered_map
+
+
+    "What is the value associated with this key?"
+        -> unordered_map
+
+
+    "Do I need sorted keys?"
+        -> map / set
+
+
+
+34. FINAL CHEAT SHEET
+------------------------------------------------------------
+
+#include <bits/stdc++.h>
+using namespace std;
+
+
+UNORDERED SET:
+
+    unordered_set<int> st;
+
+    st.insert(x);
+
+    st.erase(x);
+
+    st.count(x);
+
+    st.find(x);
+
+    st.size();
+
+    st.clear();
+
+
+UNORDERED MAP:
+
+    unordered_map<int, int> mp;
+
+    mp[x] = value;
+
+    mp[x]++;
+
+    mp.erase(x);
+
+    mp.count(x);
+
+    mp.find(x);
+
+    mp.size();
+
+    mp.clear();
+
+============================================================
+                    END
+============================================================
