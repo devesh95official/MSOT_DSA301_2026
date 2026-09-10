@@ -1,0 +1,2119 @@
+============================================================
+                 HEAP & PRIORITY QUEUE IN C++
+============================================================
+
+1. WHAT IS A HEAP?
+------------------------------------------------------------
+
+A Heap is a special tree-based data structure.
+
+A heap follows a special property between a parent and
+its children.
+
+There are mainly two types:
+
+    1. Min Heap
+    2. Max Heap
+
+
+MAX HEAP:
+
+    Parent >= Children
+
+
+MIN HEAP:
+
+    Parent <= Children
+
+
+Example of Max Heap:
+
+             50
+           /    \
+         30      40
+        /  \    /  \
+      10   20  25   35
+
+
+Every parent is greater than or equal to its children.
+
+
+Example of Min Heap:
+
+             10
+           /    \
+         20      15
+        /  \    /  \
+      30   25  40   35
+
+
+Every parent is smaller than or equal to its children.
+
+
+
+2. COMPLETE BINARY TREE
+------------------------------------------------------------
+
+A Heap is a Complete Binary Tree.
+
+Complete Binary Tree means:
+
+    All levels are completely filled
+    except possibly the last level.
+
+The last level is filled from:
+
+    LEFT -> RIGHT
+
+
+Example:
+
+             10
+           /    \
+         20      30
+        /  \    /
+      40   50  60
+
+array : {10, 20, 30, 40, 50 , 60 , NULL};
+
+
+This is a Complete Binary Tree.
+
+
+This matters because a heap can be stored efficiently
+inside an array/vector.
+
+We don't need actual tree nodes.
+
+
+
+3. HEAP USING ARRAY
+------------------------------------------------------------
+
+Suppose the heap is:
+
+             50
+           /    \
+         30      40
+        /  \    /
+      10   20  25
+
+
+Store it as:
+
+    [50, 30, 40, 10, 20, 25]
+
+
+Now we can represent the whole heap using an array.
+
+This is one of the most important properties of a heap.
+
+
+
+4. INDEXING IN A HEAP
+------------------------------------------------------------
+
+Suppose indexing starts from 0.
+
+For a node at index i:
+
+    Left Child  = 2*i + 1
+
+    Right Child = 2*i + 2
+
+    Parent      = (i - 1) / 2
+
+
+Example:
+
+    index = 1
+
+    Left Child:
+
+        2*1 + 1 = 3
+
+    Right Child:
+
+        2*1 + 2 = 4
+
+    Parent:
+
+        (1 - 1) / 2 = 0
+
+
+So:
+
+             index 0
+              50
+             /  \
+            /    \
+       index 1   index 2
+          30       40
+         /  \
+        /    \
+     index3 index4
+       10      20
+
+
+
+5. MAX HEAP
+------------------------------------------------------------
+
+In a Max Heap:
+
+    Parent >= Children
+
+
+Example:
+
+             100
+            /   \
+          70     80
+         / \    / \
+       40  50  60  30
+
+
+The largest element is always at the root.
+
+Therefore:
+
+    MAX HEAP
+        |
+        v
+    Maximum element at top
+
+
+
+6. MIN HEAP
+------------------------------------------------------------
+
+In a Min Heap:
+
+    Parent <= Children
+
+
+Example:
+
+             10
+            /  \
+          20    30
+         / \   / \
+       40  50 60 70
+
+
+The smallest element is always at the root.
+
+Therefore:
+
+    MIN HEAP
+        |
+        v
+    Minimum element at top
+
+
+
+7. WHY DO WE USE HEAPS?
+------------------------------------------------------------
+
+A heap is useful when we repeatedly need:
+
+    Maximum element
+
+or
+
+    Minimum element
+
+
+Common examples:
+
+    - Priority Queue
+    - K largest elements
+    - K smallest elements
+    - Scheduling
+    - Top K problems
+    - Dijkstra
+    - Prim's Algorithm
+    - Merge K sorted arrays
+    - Median problems
+    - Greedy algorithms
+
+
+
+8. PRIORITY QUEUE
+------------------------------------------------------------
+
+A Priority Queue is a data structure where the element
+with the highest priority is removed first.
+
+In C++, priority_queue is generally implemented using
+a heap.
+
+Default:
+
+    priority_queue
+
+behaves like a:
+
+    MAX HEAP
+
+
+Example:
+
+    priority_queue<int> pq;
+
+
+Insert:
+
+    pq.push(10);
+    pq.push(30);
+    pq.push(20);
+
+
+The largest element has highest priority.
+
+So:
+
+    top() -> 30
+
+
+
+9. BASIC PRIORITY_QUEUE OPERATIONS
+------------------------------------------------------------
+
+Create:
+
+    priority_queue<int> pq;
+
+
+Insert:
+
+    pq.push(x);
+
+
+Get highest priority element:
+
+    pq.top();
+
+
+Remove highest priority element:
+
+    pq.pop();
+
+Number of elements:
+
+    pq.size();
+
+
+
+IMPORTANT:
+
+    top()
+    does NOT remove the element.
+
+    pop()
+    removes the top element.
+
+
+
+10. MAX HEAP EXAMPLE
+------------------------------------------------------------
+
+Code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    priority_queue<int> pq;
+
+    pq.push(10);
+    pq.push(50);
+    pq.push(20);
+    pq.push(40);
+    pq.push(30);
+
+    cout << pq.top() << '\n';
+
+    return 0;
+}
+
+
+Output:
+
+    50
+
+
+Because priority_queue is a Max Heap by default.
+
+
+
+11. POPPING FROM MAX HEAP
+------------------------------------------------------------
+
+Example:
+
+    priority_queue<int> pq;
+
+    pq.push(10);
+    pq.push(50);
+    pq.push(20);
+    pq.push(40);
+    pq.push(30);
+
+
+Now:
+
+    pq.top() = 50
+
+
+After:
+
+    pq.pop();
+
+
+Top becomes:
+
+    40
+
+
+After another pop:
+
+    30
+
+
+Then:
+
+    20
+
+    10
+
+
+So the values come out in:
+
+    50 40 30 20 10
+
+
+
+12. PRINT ALL ELEMENTS
+------------------------------------------------------------
+
+You can repeatedly pop elements:
+
+    while (!pq.empty()) {
+
+        cout << pq.top() << ' ';
+
+        pq.pop();
+    }
+
+
+For a Max Heap, output will be in descending order.
+
+Example:
+
+    50 40 30 20 10
+
+
+IMPORTANT:
+
+This destroys the priority queue.
+
+So if you need the original pq later,
+make a copy first.
+
+
+
+13. MIN HEAP
+------------------------------------------------------------
+
+C++ can also create a Min Heap.
+
+Syntax:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+
+Now:
+
+    pq.top()
+
+gives the smallest element.
+
+
+Example:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+    pq.push(30);
+    pq.push(10);
+    pq.push(20);
+    pq.push(5);
+
+
+Now:
+
+    pq.top()
+
+is:
+
+    5
+
+
+
+14. MAX HEAP VS MIN HEAP
+------------------------------------------------------------
+
+MAX HEAP:
+
+    priority_queue<int> pq;
+
+    top() -> maximum
+
+
+MIN HEAP:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+    top() -> minimum
+
+
+Remember:
+
+    Default priority_queue
+        -> Max Heap
+
+
+    priority_queue + greater
+        -> Min Heap
+
+
+
+15. HEAP COMPLEXITY
+------------------------------------------------------------
+
+For a heap containing N elements:
+
+    push()  -> O(log N)
+
+    pop()   -> O(log N)
+
+    top()   -> O(1)
+
+    size()  -> O(1)
+
+
+Why is push/pop O(log N)?
+
+Because the height of a complete binary tree is:
+
+    O(log N)
+
+
+
+16. WHY IS top() O(1)?
+------------------------------------------------------------
+
+In a Max Heap:
+
+    maximum element is always at root.
+
+
+In a Min Heap:
+
+    minimum element is always at root.
+
+
+Therefore:
+
+    top()
+
+only needs to look at the root.
+
+So:
+
+    top() -> O(1)
+
+
+
+17. INSERTING INTO A HEAP
+------------------------------------------------------------
+
+Suppose we have a Max Heap:
+
+             50
+            /  \
+          30    40
+         / \
+       10   20
+
+
+Insert:
+
+    60
+
+
+First put 60 at the next available position:
+
+             50
+            /  \
+          30    40
+         / \    /
+       10  20  60
+
+
+Now heap property is broken.
+
+60 > 40
+
+So swap:
+
+             50
+            /  \
+          30    60
+         / \    /
+       10  20  40
+
+
+Again:
+
+    60 > 50
+
+Swap again:
+
+             60
+            /  \
+          30    50
+         / \    /
+       10  20  40
+
+
+Now the heap property is restored.
+
+This process is called:
+
+    UPHEAP
+    or
+    BUBBLE UP
+
+
+
+18. DELETING ROOT FROM A HEAP
+------------------------------------------------------------
+
+Suppose Max Heap:
+
+             50
+            /  \
+          30    40
+         / \    /
+       10  20  25
+
+
+Remove 50.
+
+We generally:
+
+    1. Take the last element
+    2. Put it at root
+    3. Fix the heap
+
+
+Move 25 to root:
+
+             25
+            /  \
+          30    40
+         / \
+       10  20
+
+
+Heap property is broken.
+
+25 < 40
+
+
+Swap with the larger child:
+
+             40
+            /  \
+          30    25
+         / \
+       10  20
+
+
+Heap property is restored.
+
+This process is called:
+
+    DOWNHEAP
+    or
+    BUBBLE DOWN
+
+
+
+19. HEAPIFY
+------------------------------------------------------------
+
+Heapify means fixing a heap.
+
+There are two common directions:
+
+    1. Upward
+    2. Downward
+
+
+UPHEAP:
+
+    Used after insertion
+
+
+DOWNHEAP:
+
+    Used after deleting the root
+
+
+
+20. BUILDING A HEAP
+------------------------------------------------------------
+
+Suppose:
+
+    a = [10, 50, 20, 40, 30]
+
+
+We can build a heap from this array.
+
+In C++, priority_queue can be constructed easily.
+
+Example:
+
+    vector<int> a = {10, 50, 20, 40, 30};
+
+    priority_queue<int> pq(
+        a.begin(),
+        a.end()
+    );
+
+
+Now pq is a Max Heap.
+
+    pq.top() = 50
+
+
+
+21. HEAP SORT IDEA
+------------------------------------------------------------
+
+A heap can be used for sorting.
+
+For a Max Heap:
+
+    repeatedly remove maximum
+
+
+Example:
+
+    50 40 30 20 10
+
+
+For a Min Heap:
+
+    repeatedly remove minimum
+
+
+Example:
+
+    10 20 30 40 50
+
+
+This gives us Heap Sort.
+
+
+
+22. PRIORITY QUEUE WITH PAIRS
+------------------------------------------------------------
+
+priority_queue can store pairs.
+
+Example:
+
+    priority_queue<pair<int, int>> pq;
+
+
+Suppose:
+
+    pq.push({10, 100});
+    pq.push({30, 200});
+    pq.push({20, 300});
+
+
+By default pairs are compared lexicographically.
+
+So the largest first value gets priority.
+
+Top:
+
+    {30, 200}
+
+
+
+23. IMPORTANT PAIR BEHAVIOR
+------------------------------------------------------------
+
+For:
+
+    pair<int, int>
+
+
+Comparison works like:
+
+    first value
+        |
+        v
+    compare first
+
+If first values are equal:
+
+    compare second
+
+
+Example:
+
+    {10, 50}
+    {10, 30}
+
+
+Then:
+
+    {10, 50}
+
+comes first.
+
+
+
+24. MIN HEAP OF PAIRS
+------------------------------------------------------------
+
+Example:
+
+    priority_queue<
+        pair<int, int>,
+        vector<pair<int, int>>,
+        greater<pair<int, int>>
+    > pq;
+
+
+Now the smallest pair comes first.
+
+
+Example:
+
+    pq.push({5, 100});
+    pq.push({2, 200});
+    pq.push({7, 50});
+
+
+Top:
+
+    {2, 200}
+
+
+
+25. MOST COMMON CP USE CASE
+------------------------------------------------------------
+
+Suppose we repeatedly need the smallest element.
+
+Instead of sorting every time:
+
+    sort(a.begin(), a.end());
+
+
+we can use:
+
+    Min Heap
+
+
+Then:
+
+    pq.top()
+
+gives the smallest current element.
+
+
+This is useful when elements are continuously
+being inserted and removed.
+
+
+
+26. EXAMPLE: K LARGEST ELEMENTS
+------------------------------------------------------------
+
+Suppose:
+
+    a = {10, 5, 20, 8, 15, 30}
+
+Find the largest K elements.
+
+Suppose:
+
+    K = 3
+
+
+Answer:
+
+    30 20 15
+
+
+One approach is sorting:
+
+    O(N log N)
+
+
+But heap gives another powerful approach.
+
+Use a Min Heap of size K.
+
+Keep only the K largest elements.
+
+
+
+27. K LARGEST ELEMENTS USING MIN HEAP
+------------------------------------------------------------
+
+Idea:
+
+    Maintain a Min Heap containing K elements.
+
+
+For every x:
+
+    push x
+
+If heap size > K:
+
+    pop smallest
+
+
+Why?
+
+Because the smallest among our K candidates
+is the least useful one.
+
+
+Code:
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<int> a = {10, 5, 20, 8, 15, 30};
+
+    int k = 3;
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+    for (int x : a) {
+
+        pq.push(x);
+
+        if (pq.size() > k) {
+            pq.pop();
+        }
+    }
+
+    while (!pq.empty()) {
+
+        cout << pq.top() << ' ';
+
+        pq.pop();
+    }
+
+    return 0;
+}
+
+
+The heap contains:
+
+    15 20 30
+
+
+
+28. K SMALLEST ELEMENTS
+------------------------------------------------------------
+
+For K smallest elements, use a:
+
+    Max Heap
+
+
+Example:
+
+    a = {10, 5, 20, 8, 15, 30}
+
+    K = 3
+
+
+Answer:
+
+    5 8 10
+
+
+Maintain a Max Heap of size K.
+
+For every x:
+
+    push x
+
+If size > K:
+
+    pop largest
+
+
+This keeps the K smallest elements.
+
+
+
+29. IMPORTANT RULE FOR TOP K
+------------------------------------------------------------
+
+This is very important.
+
+
+K LARGEST:
+
+    Use MIN HEAP of size K
+
+
+K SMALLEST:
+
+    Use MAX HEAP of size K
+
+
+Remember:
+
+    Want to keep largest values
+        -> remove the smallest
+        -> MIN HEAP
+
+
+    Want to keep smallest values
+        -> remove the largest
+        -> MAX HEAP
+
+
+
+30. HEAP FOR FREQUENCY PROBLEMS
+------------------------------------------------------------
+
+Heap is often combined with hashing.
+
+Example:
+
+    Find K most frequent elements.
+
+
+First:
+
+    unordered_map<int, int> freq;
+
+
+Count frequencies.
+
+Then use a heap to keep the top K.
+
+
+
+Concept:
+
+    HASHING
+        +
+    HEAP
+        =
+    TOP K PROBLEMS
+
+
+
+31. PRIORITY QUEUE VS QUEUE
+------------------------------------------------------------
+
+Normal queue:
+
+    First In First Out
+
+Example:
+
+    10 -> 20 -> 30
+
+Remove:
+
+    10
+
+
+Priority Queue:
+
+    Highest priority comes first.
+
+Example Max Heap:
+
+    10
+    50
+    20
+    30
+
+Remove:
+
+    50
+
+
+So:
+
+    queue
+        -> order of arrival
+
+
+    priority_queue
+        -> priority of element
+
+
+
+32. PRIORITY QUEUE VS STACK
+------------------------------------------------------------
+
+Stack:
+
+    Last In First Out
+
+
+Priority Queue:
+
+    Highest priority first
+
+
+Example:
+
+Stack:
+
+    push 10
+    push 20
+    push 30
+
+pop:
+
+    30
+
+
+Priority Queue:
+
+    push 10
+    push 20
+    push 30
+
+Max Heap pop:
+
+    30
+
+
+They may produce the same result in some cases,
+but their concepts are different.
+
+
+
+33. CUSTOM COMPARATOR
+------------------------------------------------------------
+
+Sometimes we need custom priority.
+
+For example:
+
+    smaller value should have higher priority
+
+
+We can use:
+
+    greater<int>
+
+
+For more complex objects, use a comparator.
+
+
+Example:
+
+    struct cmp {
+
+        bool operator()(
+            pair<int,int> a,
+            pair<int,int> b
+        ) {
+
+            return a.second > b.second;
+        }
+    };
+
+
+Then:
+
+    priority_queue<
+        pair<int,int>,
+        vector<pair<int,int>>,
+        cmp
+    > pq;
+
+
+
+34. IMPORTANT STL SYNTAX
+------------------------------------------------------------
+
+MAX HEAP:
+
+    priority_queue<int> pq;
+
+
+MIN HEAP:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+
+MAX HEAP OF PAIRS:
+
+    priority_queue<pair<int,int>> pq;
+
+
+MIN HEAP OF PAIRS:
+
+    priority_queue<
+        pair<int,int>,
+        vector<pair<int,int>>,
+        greater<pair<int,int>>
+    > pq;
+
+
+
+35. COMMON FUNCTIONS
+------------------------------------------------------------
+
+priority_queue<int> pq;
+
+
+Insert:
+
+    pq.push(x);
+
+
+Top:
+
+    pq.top();
+
+
+Remove:
+
+    pq.pop();
+
+
+Size:
+
+    pq.size();
+
+
+Empty:
+
+    pq.empty();
+
+
+
+36. VERY IMPORTANT DIFFERENCE
+------------------------------------------------------------
+
+top():
+
+    Gives the highest-priority element.
+
+
+pop():
+
+    Removes the highest-priority element.
+
+
+Example:
+
+    cout << pq.top();
+
+This only reads.
+
+
+But:
+
+    pq.pop();
+
+actually removes it.
+
+
+To read and remove:
+
+    cout << pq.top();
+    pq.pop();
+
+
+
+37. COMMON MISTAKE
+------------------------------------------------------------
+
+Wrong idea:
+
+    cout << pq.pop();
+
+
+This does not work.
+
+pop() returns void.
+
+
+Correct:
+
+    cout << pq.top();
+    pq.pop();
+
+
+
+38. COMMON MISTAKE WITH EMPTY HEAP
+------------------------------------------------------------
+
+Do NOT do:
+
+    cout << pq.top();
+
+when:
+
+    pq.empty() == true
+
+
+Correct:
+
+    if (!pq.empty()) {
+        cout << pq.top();
+    }
+
+
+
+39. HEAP VS SORTING
+------------------------------------------------------------
+
+Suppose we only need the maximum element.
+
+Sorting:
+
+    sort(a.begin(), a.end());
+
+Then:
+
+    a.back()
+
+
+Complexity:
+
+    O(N log N)
+
+
+Heap:
+
+    Build heap
+    top()
+
+Can be useful when values are dynamically inserted
+and removed.
+
+Heap is especially powerful when we don't need the
+entire array sorted.
+
+
+
+40. HEAP VS SET
+------------------------------------------------------------
+
+A common question:
+
+    "Why not just use set?"
+
+
+set:
+
+    - Keeps everything sorted
+    - O(log N) insertion
+    - O(log N) deletion
+
+
+heap:
+
+    - Gives min/max quickly
+    - O(log N) push
+    - O(log N) pop
+    - O(1) top
+
+
+If you only care about:
+
+    minimum / maximum
+
+heap is often simpler and faster.
+
+
+
+41. IMPORTANT HEAP PATTERNS
+------------------------------------------------------------
+
+PATTERN 1:
+
+    Need maximum repeatedly
+
+        -> Max Heap
+
+
+PATTERN 2:
+
+    Need minimum repeatedly
+
+        -> Min Heap
+
+
+PATTERN 3:
+
+    K largest
+
+        -> Min Heap of size K
+
+
+PATTERN 4:
+
+    K smallest
+
+        -> Max Heap of size K
+
+
+PATTERN 5:
+
+    K most frequent
+
+        -> Hash Map + Heap
+
+
+PATTERN 6:
+
+    Repeatedly combine smallest elements
+
+        -> Min Heap
+
+
+PATTERN 7:
+
+    Repeatedly process highest priority
+
+        -> Priority Queue
+
+
+
+42. EXAMPLE: REPEATEDLY REMOVE MAX
+------------------------------------------------------------
+
+Suppose:
+
+    5 10 3 8 20
+
+
+We want to repeatedly take the largest.
+
+Use:
+
+    priority_queue<int> pq;
+
+
+Then:
+
+    20
+    10
+    8
+    5
+    3
+
+
+Code:
+
+    while (!pq.empty()) {
+
+        int x = pq.top();
+
+        pq.pop();
+
+        cout << x << ' ';
+    }
+
+
+
+43. EXAMPLE: REPEATEDLY REMOVE MIN
+------------------------------------------------------------
+
+Use Min Heap:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+
+Then:
+
+    while (!pq.empty()) {
+
+        int x = pq.top();
+
+        pq.pop();
+
+        cout << x << ' ';
+    }
+
+
+Output is ascending order.
+
+
+
+44. CLASSIC PROBLEM:
+    CONNECT ROPES
+------------------------------------------------------------
+
+You are given rope lengths.
+
+Every time:
+
+    Take the two smallest ropes.
+
+Join them.
+
+Cost = sum of the two ropes.
+
+Put the new rope back.
+
+Find minimum total cost.
+
+
+Example:
+
+    4 3 2 6
+
+
+Step 1:
+
+    2 + 3 = 5
+
+Cost = 5
+
+Heap:
+
+    4 5 6
+
+
+Step 2:
+
+    4 + 5 = 9
+
+Cost = 9
+
+Heap:
+
+    6 9
+
+
+Step 3:
+
+    6 + 9 = 15
+
+Cost = 15
+
+
+Total:
+
+    5 + 9 + 15
+    = 29
+
+
+This is a classic Min Heap problem.
+
+
+
+45. CONNECT ROPES CODE
+------------------------------------------------------------
+
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+
+    vector<int> a = {4, 3, 2, 6};
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+    for (int x : a) {
+        pq.push(x);
+    }
+
+    int ans = 0;
+
+    while (pq.size() > 1) {
+
+        int x = pq.top();
+        pq.pop();
+
+        int y = pq.top();
+        pq.pop();
+
+        int z = x + y;
+
+        ans += z;
+
+        pq.push(z);
+    }
+
+    cout << ans << '\n';
+
+    return 0;
+}
+
+
+
+46. CLASSIC PROBLEM:
+    KTH LARGEST
+------------------------------------------------------------
+
+Suppose:
+
+    a = {3, 2, 1, 5, 6, 4}
+
+Find:
+
+    2nd largest
+
+
+Sorted:
+
+    6 5 4 3 2 1
+
+
+Answer:
+
+    5
+
+
+Efficient idea:
+
+    Maintain a Min Heap of size K.
+
+
+For:
+
+    K = 2
+
+
+Keep:
+
+    5 6
+
+
+Then:
+
+    top() = 5
+
+
+
+47. KTH LARGEST TEMPLATE
+------------------------------------------------------------
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+    for (int x : a) {
+
+        pq.push(x);
+
+        if (pq.size() > k) {
+            pq.pop();
+        }
+    }
+
+    cout << pq.top();
+
+
+This template is extremely useful.
+
+
+
+48. KTH SMALLEST
+------------------------------------------------------------
+
+For Kth smallest:
+
+    Maintain a Max Heap of size K.
+
+
+Template:
+
+    priority_queue<int> pq;
+
+    for (int x : a) {
+
+        pq.push(x);
+
+        if (pq.size() > k) {
+            pq.pop();
+        }
+    }
+
+    cout << pq.top();
+
+
+
+49. HEAP SORT
+------------------------------------------------------------
+
+Heap Sort works using a heap.
+
+Basic idea:
+
+    Build Heap
+
+    Repeatedly remove top
+
+
+Max Heap can produce:
+
+    descending sequence
+
+
+Min Heap can produce:
+
+    ascending sequence
+
+
+Complexity:
+
+    O(N log N)
+
+
+
+50. BUILD HEAP COMPLEXITY
+------------------------------------------------------------
+
+If we build a heap from N elements,
+heap construction can be done in:
+
+    O(N)
+
+
+This is better than inserting N elements
+one by one into an initially empty heap:
+
+    O(N log N)
+
+
+For STL, you usually don't need to implement
+heap construction manually.
+
+But the complexity is important to know.
+
+
+
+51. HEAP DATA STRUCTURE VS PRIORITY_QUEUE
+------------------------------------------------------------
+
+Heap:
+
+    The underlying data structure.
+
+
+priority_queue:
+
+    C++ STL container adaptor that provides
+    priority queue behavior using a heap.
+
+In competitive programming, we usually directly use:
+
+    priority_queue
+
+
+
+52. FINAL MENTAL MODEL
+------------------------------------------------------------
+
+Think:
+
+             HEAP
+               |
+        +------+------+
+        |             |
+     MAX HEAP      MIN HEAP
+        |             |
+    maximum top    minimum top
+        |             |
+        v             v
+ priority_queue  priority_queue
+   default          greater
+
+
+MAX HEAP:
+
+    parent >= children
+
+
+MIN HEAP:
+
+    parent <= children
+
+
+
+53. GOLDEN RULES
+------------------------------------------------------------
+
+Need maximum repeatedly?
+
+    -> Max Heap
+
+
+Need minimum repeatedly?
+
+    -> Min Heap
+
+
+Need K largest?
+
+    -> Min Heap of size K
+
+
+Need K smallest?
+
+    -> Max Heap of size K
+
+
+Need K most frequent?
+
+    -> Hash Map + Heap
+
+
+Need repeatedly combine smallest?
+
+    -> Min Heap
+
+
+Need repeatedly process based on priority?
+
+    -> Priority Queue
+
+
+
+54. COMPLEXITY CHEAT SHEET
+------------------------------------------------------------
+
+                    OPERATION
+
+    push()          -> O(log N)
+
+    pop()           -> O(log N)
+
+    top()           -> O(1)
+
+    size()          -> O(1)
+
+    empty()         -> O(1)
+
+
+Heap construction:
+
+    O(N)
+
+
+Height of heap:
+
+    O(log N)
+
+
+
+55. QUICK REVISION
+------------------------------------------------------------
+
+MAX HEAP:
+
+    priority_queue<int> pq;
+
+
+MIN HEAP:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+
+INSERT:
+
+    pq.push(x);
+
+
+GET TOP:
+
+    pq.top();
+
+
+REMOVE TOP:
+
+    pq.pop();
+
+
+CHECK EMPTY:
+
+    pq.empty();
+
+
+SIZE:
+
+    pq.size();
+
+
+
+56. MOST IMPORTANT TEMPLATES
+------------------------------------------------------------
+
+MAX HEAP:
+
+    priority_queue<int> pq;
+
+
+MIN HEAP:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+
+K LARGEST:
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    > pq;
+
+    for (int x : a) {
+
+        pq.push(x);
+
+        if (pq.size() > k)
+            pq.pop();
+    }
+
+
+K SMALLEST:
+
+    priority_queue<int> pq;
+
+    for (int x : a) {
+
+        pq.push(x);
+
+        if (pq.size() > k)
+            pq.pop();
+    }
+
+
+
+57. BEGINNER PRACTICE PROBLEMS
+------------------------------------------------------------
+
+LEVEL 1
+-------
+
+1. Implement Max Heap
+2. Implement Min Heap
+3. Find maximum using priority_queue
+4. Find minimum using priority_queue
+5. Remove elements in descending order
+6. Remove elements in ascending order
+
+
+LEVEL 2
+-------
+
+7. Kth largest element
+8. Kth smallest element
+9. K largest elements
+10. K smallest elements
+11. Connect ropes
+12. Last stone type problems
+13. Sort nearly sorted array
+
+
+LEVEL 3
+-------
+
+14. K most frequent elements
+15. Merge K sorted arrays
+16. Median of a stream
+17. Sliding window median
+18. Dijkstra using priority_queue
+19. Prim's algorithm
+20. Top K frequent / top K closest problems
+
+
+
+58. HEAP + HASHING
+------------------------------------------------------------
+
+Heap and hashing are often used together.
+
+Example:
+
+    Find K most frequent elements.
+
+
+Step 1:
+
+    unordered_map<int, int> freq;
+
+Step 2:
+
+    Count frequency.
+
+Step 3:
+
+    Use a heap to keep the best K elements.
+
+
+So:
+
+    HASHING
+       +
+    HEAP
+       |
+       v
+    TOP K
+
+
+
+59. HEAP + GREEDY
+------------------------------------------------------------
+
+Heap is also heavily used with greedy algorithms.
+
+Typical pattern:
+
+    Take the best available element.
+
+Examples:
+
+    - Minimum available value
+    - Maximum available value
+    - Earliest deadline
+    - Highest frequency
+    - Lowest cost
+
+
+A heap helps us maintain the current best choice efficiently.
+
+
+
+60. FINAL CHEAT SHEET
+------------------------------------------------------------
+
+HEAP
+
+    Complete Binary Tree
+
+MAX HEAP
+
+    Parent >= Children
+    Maximum at root
+
+MIN HEAP
+
+    Parent <= Children
+    Minimum at root
+
+
+ARRAY INDEXING
+
+    Left Child  = 2*i + 1
+    Right Child = 2*i + 2
+    Parent      = (i - 1) / 2
+
+
+C++ STL
+
+    priority_queue<int>
+        -> Max Heap
+
+
+    priority_queue<
+        int,
+        vector<int>,
+        greater<int>
+    >
+        -> Min Heap
+
+
+COMPLEXITIES
+
+    push()  -> O(log N)
+    pop()   -> O(log N)
+    top()   -> O(1)
+
+
+TOP K
+
+    K largest
+        -> Min Heap
+
+
+    K smallest
+        -> Max Heap
+
+
+KEY IDEA
+
+    If you repeatedly need the minimum
+    or maximum element:
+
+        THINK HEAP.
+
+
+
+============================================================
+                         END
+============================================================
